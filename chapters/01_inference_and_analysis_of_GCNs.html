@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Network Analysis in Systems Biology with R/Bioconductor - 1&nbsp; Inference and analysis gene coexpression networks (GCNs)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/02_network_comparison.html" rel="next">
+<link href="../chapters/00_setup.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/01_inference_and_analysis_of_GCNs.html"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Inference and analysis gene coexpression networks (GCNs)</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Network Analysis in Systems Biology with R/Bioconductor</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/00_setup.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setup</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01_inference_and_analysis_of_GCNs.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Inference and analysis gene coexpression networks (GCNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02_network_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Dealing with multiple data sets: consensus modules and module preservation</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03_network-based_data_integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04_inference_and_analysis_of_GRNs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/appendix_01_data_acquisition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Appendix: Data acquisition</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#getting-to-know-the-example-data" id="toc-getting-to-know-the-example-data" class="nav-link active" data-scroll-target="#getting-to-know-the-example-data"><span class="header-section-number">1.1</span> Getting to know the example data</a></li>
+  <li><a href="#data-preprocessing" id="toc-data-preprocessing" class="nav-link" data-scroll-target="#data-preprocessing"><span class="header-section-number">1.2</span> Data preprocessing</a></li>
+  <li><a href="#exploratory-data-analyses" id="toc-exploratory-data-analyses" class="nav-link" data-scroll-target="#exploratory-data-analyses"><span class="header-section-number">1.3</span> Exploratory data analyses</a></li>
+  <li><a href="#gene-coexpression-network-inference" id="toc-gene-coexpression-network-inference" class="nav-link" data-scroll-target="#gene-coexpression-network-inference"><span class="header-section-number">1.4</span> Gene coexpression network inference</a></li>
+  <li><a href="#visual-summary-of-the-inferred-coexpression-modules" id="toc-visual-summary-of-the-inferred-coexpression-modules" class="nav-link" data-scroll-target="#visual-summary-of-the-inferred-coexpression-modules"><span class="header-section-number">1.5</span> Visual summary of the inferred coexpression modules</a></li>
+  <li><a href="#identifying-module-trait-associations" id="toc-identifying-module-trait-associations" class="nav-link" data-scroll-target="#identifying-module-trait-associations"><span class="header-section-number">1.6</span> Identifying module-trait associations</a></li>
+  <li><a href="#functional-analyses-of-coexpression-modules" id="toc-functional-analyses-of-coexpression-modules" class="nav-link" data-scroll-target="#functional-analyses-of-coexpression-modules"><span class="header-section-number">1.7</span> Functional analyses of coexpression modules</a></li>
+  <li><a href="#identifying-hub-genes-and-visualizing-networks" id="toc-identifying-hub-genes-and-visualizing-networks" class="nav-link" data-scroll-target="#identifying-hub-genes-and-visualizing-networks"><span class="header-section-number">1.8</span> Identifying hub genes and visualizing networks</a></li>
+  <li><a href="#session-information" id="toc-session-information" class="nav-link" data-scroll-target="#session-information">Session information</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Inference and analysis gene coexpression networks (GCNs)</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>In this lesson, you will learn how to infer and analyze gene coexpression networks (GCNs) from bulk RNA-seq data. At the end of this lesson, you will be able to:</p>
+<ul>
+<li>preprocess your quantitative data for GCN inference</li>
+<li>infer a GCN that is best suitable for your project goals</li>
+<li>identify genes with increased/decreased expression profiles in conditions of interest</li>
+<li>perform a functional profiling of interesting coexpression modules</li>
+<li>explore and visualize subgraphs</li>
+</ul>
+<p>Let’s start by loading the packages we will use.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>) <span class="co"># for reproducibility</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(BioNERO)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="getting-to-know-the-example-data" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="getting-to-know-the-example-data"><span class="header-section-number">1.1</span> Getting to know the example data</h2>
+<p>Here, we will use an example data set available in <code>data/se_PRJNA800609.rda</code> in <a href="https://github.com/almeidasilvaf/NASB">the Github repo associated with this course</a>. This experiment comprises soybean (<em>Glycine max</em>) pods infected with the pathogenic fungus <em>Colletotrichum truncatum</em>, and data were downloaded from <a href="https://soyatlas.venanciogroup.uenf.br/">The Soybean Expression Atlas v2</a> <span class="citation" data-cites="almeida2023soybean">(<a href="#ref-almeida2023soybean" role="doc-biblioref">Almeida-Silva, Pedrosa-Silva, and Venancio 2023</a>)</span> using the BioProject accession <em>PRJNA800609</em>. The original data were generated by <span class="citation" data-cites="zhu2022transcriptomic">Zhu et al. (<a href="#ref-zhu2022transcriptomic" role="doc-biblioref">2022</a>)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load expression data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"se_PRJNA800609.rda"</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename object to a simpler name</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>exp <span class="ot">&lt;-</span> se_PRJNA800609</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(se_PRJNA800609)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Take a look at the object</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>exp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SummarizedExperiment 
+dim: 31422 60 
+metadata(0):
+assays(1): ''
+rownames(31422): Glyma.15G153300 Glyma.15G153400 ... Glyma.09G145600
+  Glyma.09G145700
+rowData names(0):
+colnames(60): SAMN25263487 SAMN25263488 ... SAMN25263525 SAMN25263526
+colData names(4): Part Cultivar Treatment Timepoint</code></pre>
+</div>
+</div>
+<p>As you can see, the expression data are stored in a <code>SummarizedExperiment</code> object, which is a standard data class in Bioconductor to represent quantitative data. The advantage of <code>SummarizedExperiment</code> objects over simple matrices or data frames is that they can store in a single object:</p>
+<ul>
+<li>The matrix (or matrices) with quantitative data, with features (e.g., genes, transcripts, etc.) in rows and samples in columns - accessed with <code>assays()</code>.</li>
+<li>Sample metadata (e.g., treatments, tissues, etc.) - accessed with <code>colData()</code>.</li>
+<li>Gene metadata (e.g., functional annotation) - accessed with <code>rowData()</code>.</li>
+<li>Experiment metadata, with details on study design - accessed with <code>metadata()</code>.</li>
+</ul>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="summarizedExperiment.svg" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Anatomy of a <em>SummarizedExperiment</em> object</figcaption>
+</figure>
+</div>
+<p>Now, let’s take a look at the data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Access the expression matrix</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">assay</span>(exp))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                SAMN25263487 SAMN25263488 SAMN25263507 SAMN25263508
+Glyma.15G153300     1.318818     1.456713     3.273825     2.692176
+Glyma.15G153400     1.228656     0.603925     0.740891     0.660024
+Glyma.15G153500     2.576290     2.414041     3.132376     2.447442
+Glyma.15G153600     3.158229     5.006052     5.774216     5.011995
+Glyma.15G154000    48.588521    46.962343    44.002279    45.718349
+Glyma.15G154100     5.691654     4.710240     6.759440     7.820475
+                SAMN25263527 SAMN25263528 SAMN25263489 SAMN25263529
+Glyma.15G153300     1.011012     1.959141     1.546159     1.966017
+Glyma.15G153400     1.158155     0.973421     1.216209     0.909978
+Glyma.15G153500     2.792934     2.496442     2.652230     2.844740
+Glyma.15G153600     5.932416     5.416826     5.009556     6.607424
+Glyma.15G154000    48.140179    45.986216    46.807960    47.291290
+Glyma.15G154100     5.563382     3.252028     3.853563     3.414671
+                SAMN25263509 SAMN25263490 SAMN25263510 SAMN25263530
+Glyma.15G153300     2.437312     1.717373     1.249473     1.653988
+Glyma.15G153400     0.758474     1.045148     1.082507     0.981065
+Glyma.15G153500     2.283780     3.648908     2.551933     2.656303
+Glyma.15G153600     5.293343     4.659172     4.788652     5.076116
+Glyma.15G154000    44.150545    46.539558    46.545660    44.865952
+Glyma.15G154100     7.098824     3.326728     5.027566     3.296681
+                SAMN25263511 SAMN25263491 SAMN25263531 SAMN25263492
+Glyma.15G153300     1.072911     1.382002     2.112684     1.656414
+Glyma.15G153400     1.077079     1.057292     1.765570     0.637662
+Glyma.15G153500     2.942451     2.713147     2.758773     3.556068
+Glyma.15G153600     5.096634     5.346749     7.161588     6.142572
+Glyma.15G154000    47.183440    45.581715    45.680125    49.907787
+Glyma.15G154100     5.240490     3.693226     6.612092     4.933826
+                SAMN25263512 SAMN25263493 SAMN25263532 SAMN25263494
+Glyma.15G153300     2.119458     1.422595     3.354588     0.985514
+Glyma.15G153400     0.813684     0.919768     1.143517     0.942899
+Glyma.15G153500     2.441782     3.057790     3.282164     3.308678
+Glyma.15G153600     4.855512     4.471064     7.049769     4.422022
+Glyma.15G154000    44.139259    51.262008    47.348781    49.390113
+Glyma.15G154100     5.966061     3.441541     7.288590     6.008751
+                SAMN25263513 SAMN25263495 SAMN25263533 SAMN25263496
+Glyma.15G153300     1.677701     1.073936     2.867476     1.084827
+Glyma.15G153400     1.452952     0.587908     1.555183     1.031356
+Glyma.15G153500     3.490847     3.661505     3.186424     3.667392
+Glyma.15G153600     4.999350     4.770911     8.006094     5.240810
+Glyma.15G154000    47.355689    45.822253    47.268358    49.510195
+Glyma.15G154100     3.664021     3.779945     8.693059     3.451897
+                SAMN25263497 SAMN25263514 SAMN25263534 SAMN25263480
+Glyma.15G153300     0.864997     1.576210     2.722977     1.893100
+Glyma.15G153400     0.789177     0.869626     1.406542     0.730242
+Glyma.15G153500     2.978911     3.089149     3.161537     3.151448
+Glyma.15G153600     4.856554     3.727502     5.142979     4.493014
+Glyma.15G154000    47.646541    47.268310    48.597863    47.326101
+Glyma.15G154100     3.269445     3.255262     3.221606     4.709318
+                SAMN25263515 SAMN25263535 SAMN25263516 SAMN25263498
+Glyma.15G153300     2.249624     1.891046     1.738025     1.781456
+Glyma.15G153400     0.824399     1.166962     0.965368     1.362375
+Glyma.15G153500     2.810047     2.309977     2.575456     2.255615
+Glyma.15G153600     4.637022     5.374759     4.972138     5.000512
+Glyma.15G154000    48.396839    50.467574    44.571641    44.338362
+Glyma.15G154100     2.804466     4.907848     9.371335     6.003852
+                SAMN25263536 SAMN25263481 SAMN25263499 SAMN25263500
+Glyma.15G153300     2.372151     1.676888     2.305295     1.722230
+Glyma.15G153400     0.718808     1.106588     1.590690     1.131578
+Glyma.15G153500     2.549741     3.067112     3.246375     2.959195
+Glyma.15G153600     5.138535     4.928480     5.817468     5.952875
+Glyma.15G154000    47.252720    47.964646    48.367664    43.730578
+Glyma.15G154100     3.680243     4.550954     5.706970     5.766535
+                SAMN25263482 SAMN25263517 SAMN25263537 SAMN25263501
+Glyma.15G153300     2.297834     1.327987     4.169942     1.515246
+Glyma.15G153400     1.133244     0.806522     1.441435     1.561416
+Glyma.15G153500     3.439320     2.639980     3.677552     2.638224
+Glyma.15G153600     4.086021     4.737207     7.752230     4.501115
+Glyma.15G154000    46.520719    44.371125    46.025873    43.937082
+Glyma.15G154100     3.966263     8.390515    11.923369     7.632822
+                SAMN25263518 SAMN25263483 SAMN25263502 SAMN25263484
+Glyma.15G153300     1.575119     1.671752     2.133655     1.654191
+Glyma.15G153400     0.993117     0.897881     1.274240     1.149185
+Glyma.15G153500     2.918993     2.162582     2.381541     3.025843
+Glyma.15G153600     5.048422     5.350417     6.929118     3.665560
+Glyma.15G154000    47.241867    47.987449    42.221480    48.841677
+Glyma.15G154100     8.396406     2.460024     8.368813     2.795243
+                SAMN25263538 SAMN25263503 SAMN25263519 SAMN25263539
+Glyma.15G153300     3.817733     1.847031     1.753658     3.502759
+Glyma.15G153400     1.740426     1.599077     1.279207     1.620121
+Glyma.15G153500     3.857652     3.322580     3.205660     3.414521
+Glyma.15G153600     7.136209     5.442902     4.257251     8.678930
+Glyma.15G154000    47.408513    44.237572    46.574200    49.496960
+Glyma.15G154100     9.716641     6.919685     5.026269    11.523564
+                SAMN25263485 SAMN25263504 SAMN25263505 SAMN25263486
+Glyma.15G153300     1.151478     2.768050     2.314021     1.450419
+Glyma.15G153400     0.779900     1.222210     1.206033     0.743528
+Glyma.15G153500     2.737924     2.834736     2.583771     3.355698
+Glyma.15G153600     4.359449     3.783583     4.989934     4.299697
+Glyma.15G154000    46.157778    50.927584    53.706670    46.663664
+Glyma.15G154100     2.096993     3.749880     3.716219     3.896027
+                SAMN25263520 SAMN25263521 SAMN25263506 SAMN25263522
+Glyma.15G153300     1.188940     1.135556     2.484093     1.951762
+Glyma.15G153400     0.709408     0.995971     0.599003     1.467000
+Glyma.15G153500     2.695393     3.312026     2.531277     2.223493
+Glyma.15G153600     5.380737     4.701845     5.064018     5.681533
+Glyma.15G154000    45.579255    44.800435    50.729964    47.573451
+Glyma.15G154100     4.774429     5.998384     5.261560     5.299969
+                SAMN25263523 SAMN25263524 SAMN25263525 SAMN25263526
+Glyma.15G153300     1.021902     1.624240     1.833319     1.615635
+Glyma.15G153400     1.308705     1.111181     1.261500     0.959593
+Glyma.15G153500     3.202121     3.195753     3.306832     3.429444
+Glyma.15G153600     5.285887     5.309246     6.134385     5.307514
+Glyma.15G154000    49.749942    48.849039    45.078426    47.553132
+Glyma.15G154100     6.103464     5.758107     5.965290     4.949206</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Access sample metadata (i.e., colData)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(exp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>DataFrame with 60 rows and 4 columns
+                    Part     Cultivar   Treatment   Timepoint
+             &lt;character&gt;  &lt;character&gt; &lt;character&gt; &lt;character&gt;
+SAMN25263487         pod         ZC-2     control          8h
+SAMN25263488         pod         ZC-2     control          8h
+SAMN25263507         pod         ZC-2    infected         48h
+SAMN25263508         pod         ZC-2    infected         48h
+SAMN25263527         pod Zhechun NO.3    infected         12h
+...                  ...          ...         ...         ...
+SAMN25263522         pod Zhechun NO.3     control         12h
+SAMN25263523         pod Zhechun NO.3     control         12h
+SAMN25263524         pod Zhechun NO.3     control         12h
+SAMN25263525         pod Zhechun NO.3    infected         12h
+SAMN25263526         pod Zhechun NO.3    infected         12h</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Explore the <code>exp</code> object to answer the questions below:</p>
+<ol type="1">
+<li>How many levels are there for the <code>Treatment</code> variable?</li>
+<li>Subset the expression data to keep only treated samples and calculate the mean expression for each gene. What is the ID of the gene with the greatest mean expression in treated samples? Tip: use the <code>rowMeans()</code> function to calculate means for all genes.</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(exp<span class="sc">$</span>Treatment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+ control infected 
+      30       30 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>treated <span class="ot">&lt;-</span> exp[, exp<span class="sc">$</span>Treatment <span class="sc">==</span> <span class="st">"infected"</span>]</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>gene_means <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(<span class="fu">assay</span>(treated))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span>(gene_means, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Glyma.11G154900 
+       22778.28 </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="data-preprocessing" class="level2 page-columns page-full" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="data-preprocessing"><span class="header-section-number">1.2</span> Data preprocessing</h2>
+<p>Before inferring a GCN, we have to filter and transform our expression data to maximize biological signal. The preprocessing functions implemented in <strong>BioNERO</strong> can help users:</p>
+<ol type="1">
+<li>Handle missing values - <code>replace_na()</code>;</li>
+<li>Remove non-expressed/lowly expressed genes - <code>remove_nonexp()</code>;</li>
+<li>Remove genes with low variances in expression levels - <code>filter_by_variance()</code>;</li>
+<li>Filter outlying samples - <code>ZKfiltering()</code>;</li>
+<li>Apply a principal component-based correction for confounders - <code>PC_correction()</code>.</li>
+</ol>
+<p>These preprocessing steps are optional, but strongly recommended. To execute them, you can either run one function after another (recommended if you want to use a few, but not all preprocessing steps), or use the wrapper function <code>exp_preprocess()</code>, as demonstrated below.</p>
+<div class="column-page">
+<div class="columns">
+<div class="column" style="width:45%;">
+<p><strong>Step-by-step processing</strong></p>
+<p>This is how you can preprocess your expression data by piping one function after another using R’s native pipe operator (<code>|&gt;</code>):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-1"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-1-1" class="code-annotation-target"><a href="#annotated-cell-1-1" aria-hidden="true" tabindex="-1"></a>final_exp1 <span class="ot">&lt;-</span> exp <span class="sc">|&gt;</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-1-2" class="code-annotation-target"><a href="#annotated-cell-1-2" aria-hidden="true" tabindex="-1"></a>    BioNERO<span class="sc">::</span><span class="fu">replace_na</span>() <span class="sc">|&gt;</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="3" onclick="event.preventDefault();">3</a><span id="annotated-cell-1-3" class="code-annotation-target"><a href="#annotated-cell-1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">remove_nonexp</span>(<span class="at">method =</span> <span class="st">"median"</span>, <span class="at">min_exp =</span> <span class="dv">5</span>) <span class="sc">|&gt;</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="4" onclick="event.preventDefault();">4</a><span id="annotated-cell-1-4" class="code-annotation-target"><a href="#annotated-cell-1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter_by_variance</span>(<span class="at">percentile =</span> <span class="fl">0.2</span>) <span class="sc">|&gt;</span></span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-1" data-target-annotation="5" onclick="event.preventDefault();">5</a><span id="annotated-cell-1-5" class="code-annotation-target"><a href="#annotated-cell-1-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">PC_correction</span>()</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-annotation="1" data-code-lines="1">Take <code>exp</code>, and then</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-annotation="2" data-code-lines="2">replace missing values (<code>NA</code>) with 0, and then</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-annotation="3" data-code-lines="3">remove genes with median expression &lt;5, and then</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-annotation="4" data-code-lines="4">keep only the top 20% of the genes with highest variances, and then</span>
+</dd>
+<dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
+<dd>
+<span data-code-cell="annotated-cell-1" data-code-annotation="5" data-code-lines="5">correct for confounders and apply quantile normalization.</span>
+</dd>
+</dl>
+</div>
+</div>
+</div><div class="column" style="width:3%;">
+
+</div><div class="column" style="width:45%;">
+<p><strong>One-step processing</strong></p>
+<p>To preprocess your expression data in a single function, use the function <code>exp_preprocess()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>final_exp2 <span class="ot">&lt;-</span> <span class="fu">exp_preprocess</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    exp, </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_exp =</span> <span class="dv">5</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">percentile =</span> <span class="fl">0.2</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Zk_filtering =</span> <span class="cn">FALSE</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+<p>Both examples above lead to the same results, so they are simply two different ways of executing the same task.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><p>Compare the objects <code>final_exp1</code> and <code>final_exp2</code> to verify that they are indeed the same.</p></li>
+<li><p>After correcting for confounders with <code>PC_correction()</code>, the expression data are quantile-normalized so that the expression levels for all genes are normally distributed. Visualize the distribution of expression levels for a few genes to verify that.</p></li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Are dimensions (number of rows and columns) identical?</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(<span class="fu">dim</span>(final_exp1), <span class="fu">dim</span>(final_exp2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Are the processed expression matrices identical?</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">assay</span>(final_exp1)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>],</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">assay</span>(final_exp2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>]</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">hist</span>(<span class="fu">assay</span>(final_exp1)[<span class="dv">1</span>, ])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="exploratory-data-analyses" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="exploratory-data-analyses"><span class="header-section-number">1.3</span> Exploratory data analyses</h2>
+<p>Once you have your processed expression data, you can check if they look as expected by visually exploring:</p>
+<ul>
+<li>heatmaps (gene expression or sample correlations) - <code>plot_heatmap()</code>.</li>
+<li>principal component analysis (PCA) - <code>plot_PCA()</code></li>
+</ul>
+<p>First, let’s take a look at pairwise sample correlations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot pairwise sample correlations</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>p_heatmap <span class="ot">&lt;-</span> <span class="fu">plot_heatmap</span>(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    final_exp1, </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">"samplecor"</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">coldata_cols =</span> <span class="st">"Treatment"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_rownames =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_colnames =</span> <span class="cn">FALSE</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>p_heatmap</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now, let’s plot a principal component analysis of samples.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot PCA</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>p_pca <span class="ot">&lt;-</span> <span class="fu">plot_PCA</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    final_exp1,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Treatment"</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>p_pca</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><p>Recreate the heatmap of sample correlations, but now add individual legends for the variables <code>Cultivar</code> and <code>Timepoint</code>.</p></li>
+<li><p>Create a PCA plot showing the 1st and 3rd principal components.</p></li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_heatmap</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    final_exp1, </span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="st">"samplecor"</span>, </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">coldata_cols =</span> <span class="fu">c</span>(<span class="st">"Treatment"</span>, <span class="st">"Cultivar"</span>, <span class="st">"Timepoint"</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_rownames =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">show_colnames =</span> <span class="cn">FALSE</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_PCA</span>(</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    final_exp1,</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Treatment"</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">PCs =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="gene-coexpression-network-inference" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="gene-coexpression-network-inference"><span class="header-section-number">1.4</span> Gene coexpression network inference</h2>
+<p>Before inferring the GCN, we must first select a value for the power <span class="math inline">\(\beta\)</span> to which correlation coefficients will be raised. Raising correlations to a power <span class="math inline">\(\beta\)</span> aims at amplifying their distances and, hence, making module detection more powerful. Greater values of <span class="math inline">\(\beta\)</span> makes the network resemble more a scale-free network, but at the cost of reducing the mean connectivity. To solve this trade-off, we will use the function <code>SFT_fit()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-7"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><span id="annotated-cell-7-1"><a href="#annotated-cell-7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find optimal beta power to which correlation coefficients will be raised</span></span>
+<span id="annotated-cell-7-2"><a href="#annotated-cell-7-2" aria-hidden="true" tabindex="-1"></a>sft <span class="ot">&lt;-</span> <span class="fu">SFT_fit</span>(</span>
+<span id="annotated-cell-7-3"><a href="#annotated-cell-7-3" aria-hidden="true" tabindex="-1"></a>    final_exp1, </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-7-4" class="code-annotation-target"><a href="#annotated-cell-7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">net_type =</span> <span class="st">"signed hybrid"</span>,</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-7" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-7-5" class="code-annotation-target"><a href="#annotated-cell-7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">cor_method =</span> <span class="st">"pearson"</span></span>
+<span id="annotated-cell-7-6"><a href="#annotated-cell-7-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="annotated-cell-7-7"><a href="#annotated-cell-7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-7-8"><a href="#annotated-cell-7-8" aria-hidden="true" tabindex="-1"></a>sft<span class="sc">$</span>power</span>
+<span id="annotated-cell-7-9"><a href="#annotated-cell-7-9" aria-hidden="true" tabindex="-1"></a>sft<span class="sc">$</span>plot</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-7" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-annotation="1" data-code-lines="4">Infer a <em>signed hybrid</em> network (negative correlations are represented as 0).</span>
+</dd>
+<dt data-target-cell="annotated-cell-7" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-7" data-code-annotation="2" data-code-lines="5">Use Pearson’s correlation coefficient.</span>
+</dd>
+</dl>
+</div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Power SFT.R.sq  slope truncated.R.sq mean.k. median.k. max.k.
+1      3    0.135 -0.196          0.941   303.0    292.00    691
+2      4    0.591 -0.532          0.950   211.0    196.00    565
+3      5    0.752 -0.731          0.970   155.0    137.00    477
+4      6    0.823 -0.876          0.975   118.0     97.80    411
+5      7    0.853 -0.990          0.975    92.4     71.70    360
+6      8    0.869 -1.070          0.983    73.7     53.50    319
+7      9    0.881 -1.140          0.982    59.9     40.50    286
+8     10    0.887 -1.200          0.981    49.3     31.10    257
+9     11    0.894 -1.250          0.983    41.1     24.00    233
+10    12    0.904 -1.290          0.985    34.6     18.90    213
+11    13    0.908 -1.320          0.986    29.3     15.00    195
+12    14    0.909 -1.360          0.985    25.1     12.00    179
+13    15    0.915 -1.390          0.987    21.6      9.60    165
+14    16    0.915 -1.410          0.986    18.8      7.76    153
+15    17    0.915 -1.430          0.983    16.4      6.33    142
+16    18    0.913 -1.460          0.980    14.4      5.28    132
+17    19    0.922 -1.480          0.985    12.6      4.35    123
+18    20    0.930 -1.490          0.988    11.2      3.63    116
+[1] 6</code></pre>
+</div>
+</div>
+<p>Next, we can use the estimated <span class="math inline">\(\beta\)</span> power to infer a GCN with <code>exp2gcn()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Infer a GCN</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>gcn <span class="ot">&lt;-</span> <span class="fu">exp2gcn</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    final_exp1, </span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">net_type =</span> <span class="st">"signed hybrid"</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">SFTpower =</span> sft<span class="sc">$</span>power,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">cor_method =</span> <span class="st">"pearson"</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>..connectivity..
+..matrix multiplication (system BLAS)..
+..normalization..
+..done.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(gcn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "adjacency_matrix"    "MEs"                 "genes_and_modules"  
+[4] "kIN"                 "correlation_matrix"  "params"             
+[7] "dendro_plot_objects"</code></pre>
+</div>
+</div>
+<p>The output of the <code>exp2gcn()</code> function is a list with the following elements:</p>
+<ol type="1">
+<li><code>adjacency_matrix</code>: a square matrix <span class="math inline">\(m_{ij}\)</span> representing representing the strength of the connection between gene <em>i</em> and gene <em>j</em>.</li>
+<li><code>correlation_matrix</code>: very similar to <code>adjacency_matrix</code>, but values inside the matrix represent correlation coefficients.</li>
+<li><code>genes_and_modules()</code>: a 2-column data frame of genes and their corresponding modules.</li>
+<li><code>MEs</code>: a data frame with module eigengenes (i.e., a summary of each module’s expression profiles).</li>
+<li><code>kIN</code>: a data frame with each gene’s degrees (i.e., sum of connection weights), both with genes inside the same module and in different modules.</li>
+<li><code>params</code>: list of parameters used for network inference.</li>
+<li><code>dendro_plot_objects</code>: list of objects used to plot a dendrogram of genes and modules with <code>plot_dendro_and_colors()</code>.</li>
+</ol>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Explore the object <code>gcn</code> to answer the following questions:</p>
+<ol type="1">
+<li>How many modules are there?</li>
+<li>What is the intramodular degree of the gene <em>Glyma.15G171800</em>?</li>
+<li>What is the correlation coefficient of the gene pair <em>Glyma.15G158200</em>-<em>Glyma.15G158400</em>?</li>
+<li>The <strong>grey</strong> module is not actually a real module; it contains genes that could not be assigned to any other module, so it’s basically a trash bin. How many genes are in this module?</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1: number of modules</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(gcn<span class="sc">$</span>genes_and_modules<span class="sc">$</span>Modules)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "mediumpurple3" "floralwhite"   "violet"        "orange"       
+ [5] "darkgreen"     "orangered4"    "grey60"        "darkturquoise"
+ [9] "darkgrey"      "sienna3"       "saddlebrown"   "cyan"         
+[13] "purple"        "lightgreen"    "grey"          "skyblue3"     
+[17] "darkred"       "royalblue"     "pink"          "lightcyan"    
+[21] "brown"        </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2: intramodular degree of Glyma.15G171800</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>gcn<span class="sc">$</span>kIN[<span class="st">"Glyma.15G171800"</span>, <span class="st">"kWithin"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 179.0669</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q3: correlation coefficient between Glyma.15G158200 and Glyma.15G158400</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>gcn<span class="sc">$</span>correlation_matrix[<span class="st">"Glyma.15G158200"</span>, <span class="st">"Glyma.15G158400"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.7866335</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q4: number of genes in the grey module</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>gcn<span class="sc">$</span>genes_and_modules <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(Modules <span class="sc">==</span> <span class="st">"grey"</span>) <span class="sc">|&gt;</span> <span class="fu">nrow</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 101</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="visual-summary-of-the-inferred-coexpression-modules" class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="visual-summary-of-the-inferred-coexpression-modules"><span class="header-section-number">1.5</span> Visual summary of the inferred coexpression modules</h2>
+<p>First, you’d want to visualize the number of genes per module. This can be achieved with the function <code>plot_ngenes_per_module()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_ngenes_per_module</span>(gcn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="960"></p>
+</div>
+</div>
+<p>Next, you can visualize a heatmap of pairwise correlations between module eigengenes with <code>plot_eigengene_network()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_eigengene_network</span>(gcn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="identifying-module-trait-associations" class="level2" data-number="1.6">
+<h2 data-number="1.6" class="anchored" data-anchor-id="identifying-module-trait-associations"><span class="header-section-number">1.6</span> Identifying module-trait associations</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculating module-trait correlations</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>me_trait <span class="ot">&lt;-</span> <span class="fu">module_trait_cor</span>(</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> final_exp1,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">MEs =</span> gcn<span class="sc">$</span>MEs,</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="fu">c</span>(<span class="st">"Treatment"</span>, <span class="st">"Cultivar"</span>, <span class="st">"Timepoint"</span>)</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Taking a look at the results</span></span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(me_trait)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           ME    trait        cor       pvalue     group
+1     MEbrown  control -0.1077869 4.123628e-01 Treatment
+2     MEbrown infected  0.1077869 4.123628e-01 Treatment
+3      MEcyan  control  0.5802954 1.175467e-06 Treatment
+4      MEcyan infected -0.5802954 1.175467e-06 Treatment
+5 MEdarkgreen  control  0.5340069 1.112252e-05 Treatment
+6 MEdarkgreen infected -0.5340069 1.112252e-05 Treatment</code></pre>
+</div>
+</div>
+<p>The results of <code>module_trait_cor()</code> can be visualized with <code>plot_module_trait_cor()</code> as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_module_trait_cor</span>(me_trait)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>The plot shows that the module <strong>grey60</strong> is positively correlated with the infected state, which means that genes in this module have increased expression levels in infected samples. We can take a closer look at this module’s expression profile using the function <code>plot_expression_profile()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_expression_profile</span>(</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> final_exp1, </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn,</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">modulename =</span> <span class="st">"grey60"</span>,</span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Treatment"</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning no-icon callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Challenge
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Create a multi-panel figure showing the expression profiles of the four modules with the highest absolute correlations (sign must be ignored) with the <em>infected</em> state of the variable <code>Treatment</code>. For that, use the following steps:</p>
+<ol type="1">
+<li>Filter the data frame <code>me_trait</code> to include only correlations between modules and <code>infected</code>;</li>
+<li>Arrange the rows in descending order based on the absolute value of <code>cor</code>;</li>
+<li>Extract the name of the top 4 modules.</li>
+<li>Iterate (with <code>lapply()</code> or a for loop) through each module name and create a plot with <code>plot_expression_profile()</code>;</li>
+<li>Combine the plots into a multi-panel figure using the <code>wrap_plots()</code> function from the <em><a href="https://CRAN.R-project.org/package=patchwork">patchwork</a></em> package.</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get top modules (based in correlation with `infected`)</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>modules <span class="ot">&lt;-</span> me_trait <span class="sc">|&gt;</span></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(trait <span class="sc">==</span> <span class="st">"infected"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">arrange</span>(<span class="sc">-</span><span class="fu">abs</span>(cor)) <span class="sc">|&gt;</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice_head</span>(<span class="at">n =</span> <span class="dv">4</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ME =</span> <span class="fu">str_replace_all</span>(ME, <span class="st">"ME"</span>, <span class="st">""</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pull</span>(ME)</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a list of plots</span></span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>profile_plots <span class="ot">&lt;-</span> <span class="fu">lapply</span>(modules, <span class="cf">function</span>(x) {</span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">plot_expression_profile</span>(</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>        <span class="at">exp =</span> final_exp1, </span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">net =</span> gcn,</span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">modulename =</span> x,</span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">metadata_cols =</span> <span class="st">"Treatment"</span></span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(p)</span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine plots with patchwork</span></span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> patchwork<span class="sc">::</span><span class="fu">wrap_plots</span>(</span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>    profile_plots, <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">2</span></span>
+<span id="cb41-23"><a href="#cb41-23" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb41-24"><a href="#cb41-24" aria-hidden="true" tabindex="-1"></a>    patchwork<span class="sc">::</span><span class="fu">plot_layout</span>(<span class="at">guides =</span> <span class="st">"collect"</span>) <span class="sc">&amp;</span></span>
+<span id="cb41-25"><a href="#cb41-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span>
+<span id="cb41-26"><a href="#cb41-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-27"><a href="#cb41-27" aria-hidden="true" tabindex="-1"></a>p</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="864"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="functional-analyses-of-coexpression-modules" class="level2" data-number="1.7">
+<h2 data-number="1.7" class="anchored" data-anchor-id="functional-analyses-of-coexpression-modules"><span class="header-section-number">1.7</span> Functional analyses of coexpression modules</h2>
+<p>Once you have identified interesting modules, you’d typically want to explore the function of the genes therein. This can be done with the function <code>module_enrichment()</code>, which will perform an overrepresentation analysis for functional terms (e.g., pathways, Gene Ontology terms, etc).</p>
+<p>For that, you need to pass a data frame with genes and their associated functional annotation as follows:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load annotation data - this is a list of data frames</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gma_annotation.rda"</span>))</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Taking a look at the data</span></span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(gma_annotation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "MapMan"   "InterPro"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(gma_annotation<span class="sc">$</span>MapMan)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             Gene                    MapMan
+1 Glyma.01G000100 not assigned.not annotate
+2 Glyma.01G000137 not assigned.not annotate
+3 Glyma.01G000174    not assigned.annotated
+4 Glyma.01G000211 not assigned.not annotate
+5 Glyma.01G000248    not assigned.annotated
+6 Glyma.01G000285 not assigned.not annotate</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(gma_annotation<span class="sc">$</span>InterPro)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             Gene
+1 Glyma.01G000174
+2 Glyma.01G000248
+3 Glyma.01G000248
+4 Glyma.01G000248
+5 Glyma.01G000400
+6 Glyma.01G000400
+                                                                     Interpro
+1           Photosynthesis system II assembly factor Ycf48/Hcf136-like domain
+2                Thiamine pyrophosphate enzyme, N-terminal TPP-binding domain
+3                                            Thiamin diphosphate-binding fold
+4 2-succinyl-5-enolpyruvyl-6-hydroxy-3-cyclohexene-1-carboxylic-acid synthase
+5                                                            FHY3/FAR1 family
+6                                                      Zinc finger, SWIM-type</code></pre>
+</div>
+</div>
+<p>Then, you can perform the enrichment analyses with:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-18"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><span id="annotated-cell-18-1"><a href="#annotated-cell-18-1" aria-hidden="true" tabindex="-1"></a>sea_mapman <span class="ot">&lt;-</span> <span class="fu">module_enrichment</span>(</span>
+<span id="annotated-cell-18-2"><a href="#annotated-cell-18-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn, </span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-18" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-18-3" class="code-annotation-target"><a href="#annotated-cell-18-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">background_genes =</span> <span class="fu">rownames</span>(final_exp1),</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-18" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-18-4" class="code-annotation-target"><a href="#annotated-cell-18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">annotation =</span> gma_annotation<span class="sc">$</span>MapMan</span>
+<span id="annotated-cell-18-5"><a href="#annotated-cell-18-5" aria-hidden="true" tabindex="-1"></a>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-18" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-18" data-code-annotation="1" data-code-lines="3">Using only genes in the network as background set (very important!)</span>
+</dd>
+<dt data-target-cell="annotated-cell-18" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-18" data-code-annotation="2" data-code-lines="4">Perform enrichment for MapMan pathways</span>
+</dd>
+</dl>
+</div>
+</div>
+<p>The output of <code>module_enrichment()</code> is a data frame with significant terms for each module (if any).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sea_mapman)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                                                                                                                                                                                                                                     term
+98                                                                                            Enzyme classification.EC_1 oxidoreductases.EC_1.13 oxidoreductase acting on single donor with incorporation of molecular oxygen (oxygenase)
+249                                                                                                                                               Protein homeostasis.proteolysis.protease inhibitor activities.Kunitz protease inhibitor
+60                                                                                                                              Cell wall organisation.pectin.rhamnogalacturonan I.modification and degradation.beta-galactosidase (BGAL)
+234                                                                                                     Protein homeostasis.autophagy.phagophore expansion.ATG8-phosphatidylethanolamine conjugation system.ubiquitin-fold protein (ATG8)
+262 Protein homeostasis.ubiquitin-proteasome system.ubiquitin-fold protein conjugation.Cullin-based ubiquitylation complexes.SKP1-CUL1-FBX (SCF) E3 ubiquitin ligase complexes.F-BOX substrate adaptor activities.substrate adaptor (FBX)
+42                                                Cell wall organisation.cutin and suberin.cuticular lipid formation.alkane-forming pathway.CER1-CER3 alkane-forming complex.electron supply module.electron shuttle hemoprotein (Cyt-b5)
+    genes all         pval         padj category      module
+98      6   7 6.593109e-12 3.454789e-09   MapMan        cyan
+249     3   8 5.826158e-05 1.526453e-02   MapMan        cyan
+60      6   6 1.256261e-05 3.466687e-03   MapMan   darkgreen
+234     7   8 1.323163e-05 3.466687e-03   MapMan   darkgreen
+262     8  13 1.811093e-04 3.163376e-02   MapMan   darkgreen
+42      6   6 2.341247e-04 4.089377e-02   MapMan floralwhite</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Inspect the enrichment results in <code>sea_mapman</code> and answer the following questions:</li>
+</ol>
+<ul>
+<li>How many modules had enriched terms?</li>
+<li>What proportion of the total number of modules does that represent?</li>
+</ul>
+<ol start="2" type="1">
+<li>Rerun the enrichment analysis, but now using the annotation data frame in <code>gma_annotation$InterPro</code>. Then, answer the questions below:</li>
+</ol>
+<ul>
+<li>How many modules had enriched terms?</li>
+<li>What proportion of the total number of modules does that represent?</li>
+<li>Were the number of modules with enriched terms different when using MapMan annotation and InterPro annotation? If so, why do you think that happened?</li>
+</ul>
+<ol start="3" type="1">
+<li>(Optional, advanced) Choose one of the interesting modules you found in the previous section (on module-trait correlations) and look at the enrichment results for it. Based on the expression profiles and enrichment results, can you come out with a reasonable biological explanation for the observed expression patterns?</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(sea_mapman<span class="sc">$</span>module))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 7</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(sea_mapman<span class="sc">$</span>module)) <span class="sc">/</span> <span class="fu">length</span>(<span class="fu">unique</span>(gcn<span class="sc">$</span>genes_and_modules<span class="sc">$</span>Modules))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.3333333</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>sea_interpro <span class="ot">&lt;-</span> <span class="fu">module_enrichment</span>(</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn, </span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">background_genes =</span> <span class="fu">rownames</span>(final_exp1),</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">annotation =</span> gma_annotation<span class="sc">$</span>InterPro</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(sea_interpro<span class="sc">$</span>module))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 13</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(sea_interpro<span class="sc">$</span>module)) <span class="sc">/</span> <span class="fu">length</span>(<span class="fu">unique</span>(gcn<span class="sc">$</span>genes_and_modules<span class="sc">$</span>Modules))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6190476</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="identifying-hub-genes-and-visualizing-networks" class="level2" data-number="1.8">
+<h2 data-number="1.8" class="anchored" data-anchor-id="identifying-hub-genes-and-visualizing-networks"><span class="header-section-number">1.8</span> Identifying hub genes and visualizing networks</h2>
+<p>Hubs are the genes with the highest degree (i.e., sum of connection weights) in each module, and they are often considered to be the most important genes in a network. To identify hubs in a GCN, you can use the function <code>get_hubs_gcn()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>hubs <span class="ot">&lt;-</span> <span class="fu">get_hubs_gcn</span>(<span class="at">exp =</span> final_exp1, <span class="at">net =</span> gcn)</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(hubs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             Gene Module   kWithin
+1 Glyma.05G051300  brown  2.789611
+2 Glyma.14G142300  brown  2.545291
+3 Glyma.19G187400  brown  2.482610
+4 Glyma.07G006900   cyan 11.718883
+5 Glyma.15G026400   cyan 11.675715
+6 Glyma.13G347700   cyan 11.271738</code></pre>
+</div>
+</div>
+<p>Besides exploring the major genes in each module, you can use the output of <code>get_hubs_gcn()</code> for network visualization. For that, you will first need to extract a subgraph containing the genes you want to visualize (usually an entire module), which can be achieved with the function <code>get_edge_list()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-21"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><span id="annotated-cell-21-1"><a href="#annotated-cell-21-1" aria-hidden="true" tabindex="-1"></a>edges <span class="ot">&lt;-</span> <span class="fu">get_edge_list</span>(</span>
+<span id="annotated-cell-21-2"><a href="#annotated-cell-21-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn,</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-21" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-21-3" class="code-annotation-target"><a href="#annotated-cell-21-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">module =</span> <span class="st">"royalblue"</span>,</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-21" data-target-annotation="2" onclick="event.preventDefault();">2</a><span id="annotated-cell-21-4" class="code-annotation-target"><a href="#annotated-cell-21-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">filter =</span> <span class="cn">TRUE</span></span>
+<span id="annotated-cell-21-5"><a href="#annotated-cell-21-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="annotated-cell-21-6"><a href="#annotated-cell-21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-21-7"><a href="#annotated-cell-21-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(edges)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-21" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-21" data-code-annotation="1" data-code-lines="3">Create a subgraph containing all genes in the <em>royalblue</em> module.</span>
+</dd>
+<dt data-target-cell="annotated-cell-21" data-target-annotation="2">2</dt>
+<dd>
+<span data-code-cell="annotated-cell-21" data-code-annotation="2" data-code-lines="4">Filter the graph to keep only connections greater than or equal to a given correlation coefficient (automatically estimated based on optimal scale-free topology fit).</span>
+</dd>
+</dl>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>               Var1            Var2      Freq
+175 Glyma.15G253700 Glyma.17G101700 0.8230963
+233 Glyma.15G253700 Glyma.17G105600 0.8326334
+295 Glyma.17G105600 Glyma.17G235300 0.8218305
+407 Glyma.15G253700 Glyma.18G255300 0.8645490
+411 Glyma.17G105600 Glyma.18G255300 0.8867203
+412 Glyma.17G235300 Glyma.18G255300 0.8584245</code></pre>
+</div>
+</div>
+<p>Next, you can use the function <code>plot_gcn()</code> to visualize these genes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-22"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><span id="annotated-cell-22-1"><a href="#annotated-cell-22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_gcn</span>(</span>
+<span id="annotated-cell-22-2"><a href="#annotated-cell-22-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">edgelist_gcn =</span> edges,</span>
+<span id="annotated-cell-22-3"><a href="#annotated-cell-22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn,</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-22" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-22-4" class="code-annotation-target"><a href="#annotated-cell-22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">color_by =</span> <span class="st">"module"</span>,</span>
+<span id="annotated-cell-22-5"><a href="#annotated-cell-22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">hubs =</span> hubs</span>
+<span id="annotated-cell-22-6"><a href="#annotated-cell-22-6" aria-hidden="true" tabindex="-1"></a>)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-22" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-cell="annotated-cell-22" data-code-annotation="1" data-code-lines="4">Nodes will be colored by their module (hence, in this case, they will have a single color).</span>
+</dd>
+</dl>
+</div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><p>Recreate the edge list for the <em>royalblue</em> module, but now use <code>method = 'min_cor'</code> and <code>rcutoff = 0.4</code>. Then, plot the network. Does that change the network? If so, how?</p></li>
+<li><p>Visualize the network from the previous question in the interactive mode.</p></li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>fedges <span class="ot">&lt;-</span> <span class="fu">get_edge_list</span>(</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn,</span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">module =</span> <span class="st">"royalblue"</span>,</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"min_cor"</span>,</span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">rcutoff =</span> <span class="fl">0.4</span></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_gcn</span>(</span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">edgelist_gcn =</span> fedges,</span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">net =</span> gcn,</span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">color_by =</span> <span class="st">"module"</span>,</span>
+<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">hubs =</span> hubs</span>
+<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: this part was commented so that this book can be exported to PDF</span></span>
+<span id="cb62-3"><a href="#cb62-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb62-4"><a href="#cb62-4" aria-hidden="true" tabindex="-1"></a><span class="co"># plot_gcn(</span></span>
+<span id="cb62-5"><a href="#cb62-5" aria-hidden="true" tabindex="-1"></a><span class="co">#     edgelist_gcn = fedges,</span></span>
+<span id="cb62-6"><a href="#cb62-6" aria-hidden="true" tabindex="-1"></a><span class="co">#     net = gcn,</span></span>
+<span id="cb62-7"><a href="#cb62-7" aria-hidden="true" tabindex="-1"></a><span class="co">#     color_by = "module",</span></span>
+<span id="cb62-8"><a href="#cb62-8" aria-hidden="true" tabindex="-1"></a><span class="co">#     hubs = hubs,</span></span>
+<span id="cb62-9"><a href="#cb62-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     interactive = TRUE</span></span>
+<span id="cb62-10"><a href="#cb62-10" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="session-information" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="session-information">Session information</h2>
+<p>This chapter was created under the following conditions:</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.3.0 (2023-04-21)
+ os       Ubuntu 20.04.5 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/Brussels
+ date     2023-09-09
+ pandoc   3.1.1 @ /usr/lib/rstudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ package              * version   date (UTC) lib source
+ abind                  1.4-5     2016-07-21 [1] CRAN (R 4.3.0)
+ annotate               1.78.0    2023-04-25 [1] Bioconductor
+ AnnotationDbi          1.62.0    2023-04-25 [1] Bioconductor
+ backports              1.4.1     2021-12-13 [1] CRAN (R 4.3.0)
+ base64enc              0.1-3     2015-07-28 [1] CRAN (R 4.3.0)
+ Biobase              * 2.60.0    2023-04-25 [1] Bioconductor
+ BiocGenerics         * 0.46.0    2023-04-25 [1] Bioconductor
+ BiocManager            1.30.21.1 2023-07-18 [1] CRAN (R 4.3.0)
+ BiocParallel           1.34.0    2023-04-25 [1] Bioconductor
+ BiocStyle              2.29.1    2023-08-04 [1] Github (Bioconductor/BiocStyle@7c0e093)
+ BioNERO              * 1.9.7     2023-08-23 [1] Bioconductor
+ Biostrings             2.68.0    2023-04-25 [1] Bioconductor
+ bit                    4.0.5     2022-11-15 [1] CRAN (R 4.3.0)
+ bit64                  4.0.5     2020-08-30 [1] CRAN (R 4.3.0)
+ bitops                 1.0-7     2021-04-24 [1] CRAN (R 4.3.0)
+ blob                   1.2.4     2023-03-17 [1] CRAN (R 4.3.0)
+ cachem                 1.0.8     2023-05-01 [1] CRAN (R 4.3.0)
+ Cairo                  1.6-0     2022-07-05 [1] CRAN (R 4.3.0)
+ checkmate              2.2.0     2023-04-27 [1] CRAN (R 4.3.0)
+ circlize               0.4.15    2022-05-10 [1] CRAN (R 4.3.0)
+ cli                    3.6.1     2023-03-23 [1] CRAN (R 4.3.0)
+ clue                   0.3-64    2023-01-31 [1] CRAN (R 4.3.0)
+ cluster                2.1.4     2022-08-22 [4] CRAN (R 4.2.1)
+ coda                   0.19-4    2020-09-30 [1] CRAN (R 4.3.0)
+ codetools              0.2-19    2023-02-01 [4] CRAN (R 4.2.2)
+ colorspace             2.1-0     2023-01-23 [1] CRAN (R 4.3.0)
+ ComplexHeatmap         2.16.0    2023-04-25 [1] Bioconductor
+ crayon                 1.5.2     2022-09-29 [1] CRAN (R 4.3.0)
+ data.table             1.14.8    2023-02-17 [1] CRAN (R 4.3.0)
+ DBI                    1.1.3     2022-06-18 [1] CRAN (R 4.3.0)
+ DelayedArray           0.26.1    2023-05-01 [1] Bioconductor
+ digest                 0.6.33    2023-07-07 [1] CRAN (R 4.3.0)
+ doParallel             1.0.17    2022-02-07 [1] CRAN (R 4.3.0)
+ dplyr                * 1.1.2     2023-04-20 [1] CRAN (R 4.3.0)
+ dynamicTreeCut         1.63-1    2016-03-11 [1] CRAN (R 4.3.0)
+ edgeR                  3.42.0    2023-04-25 [1] Bioconductor
+ evaluate               0.21      2023-05-05 [1] CRAN (R 4.3.0)
+ fansi                  1.0.4     2023-01-22 [1] CRAN (R 4.3.0)
+ farver                 2.1.1     2022-07-06 [1] CRAN (R 4.3.0)
+ fastcluster            1.2.3     2021-05-24 [1] CRAN (R 4.3.0)
+ fastmap                1.1.1     2023-02-24 [1] CRAN (R 4.3.0)
+ forcats              * 1.0.0     2023-01-29 [1] CRAN (R 4.3.0)
+ foreach                1.5.2     2022-02-02 [1] CRAN (R 4.3.0)
+ foreign                0.8-82    2022-01-13 [4] CRAN (R 4.1.2)
+ Formula                1.2-5     2023-02-24 [1] CRAN (R 4.3.0)
+ genefilter             1.82.0    2023-04-25 [1] Bioconductor
+ generics               0.1.3     2022-07-05 [1] CRAN (R 4.3.0)
+ GENIE3                 1.22.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDb         * 1.36.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDbData       1.2.10    2023-04-28 [1] Bioconductor
+ GenomicRanges        * 1.52.0    2023-04-25 [1] Bioconductor
+ GetoptLong             1.0.5     2020-12-15 [1] CRAN (R 4.3.0)
+ ggdendro               0.1.23    2022-02-16 [1] CRAN (R 4.3.0)
+ ggnetwork              0.5.12    2023-03-06 [1] CRAN (R 4.3.0)
+ ggplot2              * 3.4.1     2023-02-10 [1] CRAN (R 4.3.0)
+ ggrepel                0.9.3     2023-02-03 [1] CRAN (R 4.3.0)
+ GlobalOptions          0.1.2     2020-06-10 [1] CRAN (R 4.3.0)
+ glue                   1.6.2     2022-02-24 [1] CRAN (R 4.3.0)
+ GO.db                  3.17.0    2023-05-02 [1] Bioconductor
+ gridExtra              2.3       2017-09-09 [1] CRAN (R 4.3.0)
+ gtable                 0.3.3     2023-03-21 [1] CRAN (R 4.3.0)
+ here                 * 1.0.1     2020-12-13 [1] CRAN (R 4.3.0)
+ Hmisc                  5.0-1     2023-03-08 [1] CRAN (R 4.3.0)
+ hms                    1.1.3     2023-03-21 [1] CRAN (R 4.3.0)
+ htmlTable              2.4.1     2022-07-07 [1] CRAN (R 4.3.0)
+ htmltools              0.5.5     2023-03-23 [1] CRAN (R 4.3.0)
+ htmlwidgets            1.6.2     2023-03-17 [1] CRAN (R 4.3.0)
+ httr                   1.4.5     2023-02-24 [1] CRAN (R 4.3.0)
+ igraph                 1.4.2     2023-04-07 [1] CRAN (R 4.3.0)
+ impute                 1.74.0    2023-04-25 [1] Bioconductor
+ intergraph             2.0-2     2016-12-05 [1] CRAN (R 4.3.0)
+ IRanges              * 2.34.0    2023-04-25 [1] Bioconductor
+ iterators              1.0.14    2022-02-05 [1] CRAN (R 4.3.0)
+ jsonlite               1.8.7     2023-06-29 [1] CRAN (R 4.3.0)
+ KEGGREST               1.40.0    2023-04-25 [1] Bioconductor
+ knitr                  1.43      2023-05-25 [1] CRAN (R 4.3.0)
+ labeling               0.4.2     2020-10-20 [1] CRAN (R 4.3.0)
+ lattice                0.20-45   2021-09-22 [4] CRAN (R 4.2.0)
+ lifecycle              1.0.3     2022-10-07 [1] CRAN (R 4.3.0)
+ limma                  3.56.0    2023-04-25 [1] Bioconductor
+ locfit                 1.5-9.7   2023-01-02 [1] CRAN (R 4.3.0)
+ lubridate            * 1.9.2     2023-02-10 [1] CRAN (R 4.3.0)
+ magick                 2.7.4     2023-03-09 [1] CRAN (R 4.3.0)
+ magrittr               2.0.3     2022-03-30 [1] CRAN (R 4.3.0)
+ MASS                   7.3-58.2  2023-01-23 [4] CRAN (R 4.2.2)
+ Matrix                 1.5-1     2022-09-13 [4] CRAN (R 4.2.1)
+ MatrixGenerics       * 1.12.2    2023-06-09 [1] Bioconductor
+ matrixStats          * 1.0.0     2023-06-02 [1] CRAN (R 4.3.0)
+ memoise                2.0.1     2021-11-26 [1] CRAN (R 4.3.0)
+ mgcv                   1.8-41    2022-10-21 [4] CRAN (R 4.2.1)
+ minet                  3.58.0    2023-04-25 [1] Bioconductor
+ munsell                0.5.0     2018-06-12 [1] CRAN (R 4.3.0)
+ NetRep                 1.2.6     2023-01-06 [1] CRAN (R 4.3.0)
+ network                1.18.1    2023-01-24 [1] CRAN (R 4.3.0)
+ nlme                   3.1-162   2023-01-31 [4] CRAN (R 4.2.2)
+ nnet                   7.3-18    2022-09-28 [4] CRAN (R 4.2.1)
+ patchwork              1.1.2     2022-08-19 [1] CRAN (R 4.3.0)
+ pillar                 1.9.0     2023-03-22 [1] CRAN (R 4.3.0)
+ pkgconfig              2.0.3     2019-09-22 [1] CRAN (R 4.3.0)
+ plyr                   1.8.8     2022-11-11 [1] CRAN (R 4.3.0)
+ png                    0.1-8     2022-11-29 [1] CRAN (R 4.3.0)
+ preprocessCore         1.62.0    2023-04-25 [1] Bioconductor
+ purrr                * 1.0.1     2023-01-10 [1] CRAN (R 4.3.0)
+ R6                     2.5.1     2021-08-19 [1] CRAN (R 4.3.0)
+ RColorBrewer           1.1-3     2022-04-03 [1] CRAN (R 4.3.0)
+ Rcpp                   1.0.10    2023-01-22 [1] CRAN (R 4.3.0)
+ RCurl                  1.98-1.12 2023-03-27 [1] CRAN (R 4.3.0)
+ readr                * 2.1.4     2023-02-10 [1] CRAN (R 4.3.0)
+ reshape2               1.4.4     2020-04-09 [1] CRAN (R 4.3.0)
+ RhpcBLASctl            0.23-42   2023-02-11 [1] CRAN (R 4.3.0)
+ rjson                  0.2.21    2022-01-09 [1] CRAN (R 4.3.0)
+ rlang                  1.1.1     2023-04-28 [1] CRAN (R 4.3.0)
+ rmarkdown              2.23      2023-07-01 [1] CRAN (R 4.3.0)
+ rpart                  4.1.19    2022-10-21 [4] CRAN (R 4.2.1)
+ rprojroot              2.0.3     2022-04-02 [1] CRAN (R 4.3.0)
+ RSQLite                2.3.1     2023-04-03 [1] CRAN (R 4.3.0)
+ rstudioapi             0.14      2022-08-22 [1] CRAN (R 4.3.0)
+ S4Arrays               1.0.1     2023-05-01 [1] Bioconductor
+ S4Vectors            * 0.38.0    2023-04-25 [1] Bioconductor
+ scales                 1.2.1     2022-08-20 [1] CRAN (R 4.3.0)
+ sessioninfo            1.2.2     2021-12-06 [1] CRAN (R 4.3.0)
+ shape                  1.4.6     2021-05-19 [1] CRAN (R 4.3.0)
+ statmod                1.5.0     2023-01-06 [1] CRAN (R 4.3.0)
+ statnet.common         4.8.0     2023-01-24 [1] CRAN (R 4.3.0)
+ stringi                1.7.12    2023-01-11 [1] CRAN (R 4.3.0)
+ stringr              * 1.5.0     2022-12-02 [1] CRAN (R 4.3.0)
+ SummarizedExperiment * 1.30.1    2023-05-01 [1] Bioconductor
+ survival               3.5-3     2023-02-12 [4] CRAN (R 4.2.2)
+ sva                    3.48.0    2023-04-25 [1] Bioconductor
+ tibble               * 3.2.1     2023-03-20 [1] CRAN (R 4.3.0)
+ tidyr                * 1.3.0     2023-01-24 [1] CRAN (R 4.3.0)
+ tidyselect             1.2.0     2022-10-10 [1] CRAN (R 4.3.0)
+ tidyverse            * 2.0.0     2023-02-22 [1] CRAN (R 4.3.0)
+ timechange             0.2.0     2023-01-11 [1] CRAN (R 4.3.0)
+ tzdb                   0.3.0     2022-03-28 [1] CRAN (R 4.3.0)
+ utf8                   1.2.3     2023-01-31 [1] CRAN (R 4.3.0)
+ vctrs                  0.6.3     2023-06-14 [1] CRAN (R 4.3.0)
+ WGCNA                  1.72-1    2023-01-18 [1] CRAN (R 4.3.0)
+ withr                  2.5.0     2022-03-03 [1] CRAN (R 4.3.0)
+ xfun                   0.39      2023-04-20 [1] CRAN (R 4.3.0)
+ XML                    3.99-0.14 2023-03-19 [1] CRAN (R 4.3.0)
+ xtable                 1.8-4     2019-04-21 [1] CRAN (R 4.3.0)
+ XVector                0.40.0    2023-04-25 [1] Bioconductor
+ yaml                   2.3.7     2023-01-23 [1] CRAN (R 4.3.0)
+ zlibbioc               1.46.0    2023-04-25 [1] Bioconductor
+
+ [1] /home/faalm/R/x86_64-pc-linux-gnu-library/4.3
+ [2] /usr/local/lib/R/site-library
+ [3] /usr/lib/R/site-library
+ [4] /usr/lib/R/library
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-almeida2023soybean" class="csl-entry" role="listitem">
+Almeida-Silva, Fabricio, Francisnei Pedrosa-Silva, and Thiago M Venancio. 2023. <span>“The Soybean Expression Atlas V2: A Comprehensive Database of over 5000 RNA-Seq Samples.”</span> <em>bioRxiv</em>, 2023–04.
+</div>
+<div id="ref-zhu2022transcriptomic" class="csl-entry" role="listitem">
+Zhu, Longming, Qinghua Yang, Xiaomin Yu, Xujun Fu, Hangxia Jin, and Fengjie Yuan. 2022. <span>“Transcriptomic and Metabolomic Analyses Reveal a Potential Mechanism to Improve Soybean Resistance to Anthracnose.”</span> <em>Frontiers in Plant Science</em> 13: 850829.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/00_setup.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Setup</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/02_network_comparison.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Dealing with multiple data sets: consensus modules and module preservation</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>

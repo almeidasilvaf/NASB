@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Network Analysis in Systems Biology with R/Bioconductor - 4&nbsp; Inference and analysis of gene regulatory networks (GRNs)</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/appendix_01_data_acquisition.html" rel="next">
+<link href="../chapters/03_network-based_data_integration.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/04_inference_and_analysis_of_GRNs.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Network Analysis in Systems Biology with R/Bioconductor</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/00_setup.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setup</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01_inference_and_analysis_of_GCNs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Inference and analysis gene coexpression networks (GCNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02_network_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Dealing with multiple data sets: consensus modules and module preservation</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03_network-based_data_integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04_inference_and_analysis_of_GRNs.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/appendix_01_data_acquisition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Appendix: Data acquisition</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#getting-to-know-the-example-data" id="toc-getting-to-know-the-example-data" class="nav-link active" data-scroll-target="#getting-to-know-the-example-data"><span class="header-section-number">4.1</span> Getting to know the example data</a></li>
+  <li><a href="#grn-inference" id="toc-grn-inference" class="nav-link" data-scroll-target="#grn-inference"><span class="header-section-number">4.2</span> GRN inference</a>
+  <ul class="collapse">
+  <li><a href="#individual-algorithms" id="toc-individual-algorithms" class="nav-link" data-scroll-target="#individual-algorithms"><span class="header-section-number">4.2.1</span> Individual algorithms</a></li>
+  <li><a href="#wisdom-of-the-crowds" id="toc-wisdom-of-the-crowds" class="nav-link" data-scroll-target="#wisdom-of-the-crowds"><span class="header-section-number">4.2.2</span> Wisdom of the crowds</a></li>
+  </ul></li>
+  <li><a href="#grn-analyses" id="toc-grn-analyses" class="nav-link" data-scroll-target="#grn-analyses"><span class="header-section-number">4.3</span> GRN analyses</a>
+  <ul class="collapse">
+  <li><a href="#finding-grn-hubs" id="toc-finding-grn-hubs" class="nav-link" data-scroll-target="#finding-grn-hubs"><span class="header-section-number">4.3.1</span> Finding GRN hubs</a></li>
+  <li><a href="#exploring-and-visualizing-grns" id="toc-exploring-and-visualizing-grns" class="nav-link" data-scroll-target="#exploring-and-visualizing-grns"><span class="header-section-number">4.3.2</span> Exploring and visualizing GRNs</a></li>
+  </ul></li>
+  <li><a href="#session-information" id="toc-session-information" class="nav-link" data-scroll-target="#session-information">Session information</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>In this lesson, you will learn how to infer gene regulatory networks (GRNs) from bulk RNA-seq data. At the end of the lesson, you will be able to:</p>
+<ul>
+<li>infer GRNs using different popular algorithms</li>
+<li>explore GRNs to extract subgraphs of interest</li>
+<li>visualize GRNs</li>
+</ul>
+<p>Let’s start by loading the packages we will use.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>) <span class="co"># for reproducibility</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(BioNERO)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="getting-to-know-the-example-data" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="getting-to-know-the-example-data"><span class="header-section-number">4.1</span> Getting to know the example data</h2>
+<p>Here, we will use an example data set available in <code>data/se_PRJNA800609.rda</code> in <a href="https://github.com/almeidasilvaf/NASB">the Github repo associated with this course</a>. This experiment comprises soybean (<em>Glycine max</em>) pods infected with the pathogenic fungus <em>Colletotrichum truncatum</em>, and data were downloaded from <a href="https://soyatlas.venanciogroup.uenf.br/">The Soybean Expression Atlas v2</a> <span class="citation" data-cites="almeida2023soybean">(<a href="#ref-almeida2023soybean" role="doc-biblioref">Almeida-Silva, Pedrosa-Silva, and Venancio 2023</a>)</span> using the BioProject accession <em>PRJNA800609</em>. The original data were generated by <span class="citation" data-cites="zhu2022transcriptomic">Zhu et al. (<a href="#ref-zhu2022transcriptomic" role="doc-biblioref">2022</a>)</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load expression data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"se_PRJNA800609.rda"</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rename object to a simpler name</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>exp <span class="ot">&lt;-</span> se_PRJNA800609</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(se_PRJNA800609)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Take a look at the object</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>exp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SummarizedExperiment 
+dim: 31422 60 
+metadata(0):
+assays(1): ''
+rownames(31422): Glyma.15G153300 Glyma.15G153400 ... Glyma.09G145600
+  Glyma.09G145700
+rowData names(0):
+colnames(60): SAMN25263487 SAMN25263488 ... SAMN25263525 SAMN25263526
+colData names(4): Part Cultivar Treatment Timepoint</code></pre>
+</div>
+</div>
+<p>We will also use soybean transcription factors obtained from PlantTFDB 4.0 <span class="citation" data-cites="jin2016planttfdb">(<a href="#ref-jin2016planttfdb" role="doc-biblioref">Jin et al. 2016</a>)</span>, which are stored in <code>data/gma_tfs.rda</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load transcription factors</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gma_tfs.rda"</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(gma_tfs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Glyma.10G204400" "Glyma.02G099500" "Glyma.20G186200" "Glyma.01G087500"
+[5] "Glyma.20G247300" "Glyma.01G000600"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(gma_tfs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3747</code></pre>
+</div>
+</div>
+</section>
+<section id="grn-inference" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="grn-inference"><span class="header-section-number">4.2</span> GRN inference</h2>
+<p>To infer GRNs, we need two input objects:</p>
+<ol type="1">
+<li>A gene expression matrix (or a <code>SummarizedExperiment</code> object)</li>
+<li>A vector of known regulators (e.g., TFs).</li>
+</ol>
+<p>First, let’s preprocess our expression data with <code>exp_preprocess()</code>. Here, for the sake of demonstration, we will only use the top 2000 genes with the highest variances.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Preprocess the input data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>final_exp <span class="ot">&lt;-</span> <span class="fu">exp_preprocess</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    exp,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_exp =</span> <span class="dv">5</span>, </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance_filter =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="dv">2000</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we’re good to go. With <strong>BioNERO</strong>, one can infer GRNs using 3 popular algorithms: GENIE3 <span class="citation" data-cites="huynh2010inferring">(<a href="#ref-huynh2010inferring" role="doc-biblioref"><strong>huynh2010inferring?</strong></a>)</span>, ARACNE <span class="citation" data-cites="margolin2006aracne">(<a href="#ref-margolin2006aracne" role="doc-biblioref">Margolin et al. 2006</a>)</span>, and CLR <span class="citation" data-cites="faith2007large">(<a href="#ref-faith2007large" role="doc-biblioref">Faith et al. 2007</a>)</span>. Users can also infer GRNs using a combination of methods (a.k.a. “wisdom of the crowds” principle), which has been shown to lead to more accurate results <span class="citation" data-cites="marbach2012wisdom">(<a href="#ref-marbach2012wisdom" role="doc-biblioref">Marbach et al. 2012</a>)</span>. Let’s demonstrate each of these approaches.</p>
+<section id="individual-algorithms" class="level3" data-number="4.2.1">
+<h3 data-number="4.2.1" class="anchored" data-anchor-id="individual-algorithms"><span class="header-section-number">4.2.1</span> Individual algorithms</h3>
+<p>To infer GRNs using individual algorithms, you’d use the function <code>grn_infer()</code> and specify the method in the <em>method</em> parameter. Below you can find a short description of each algorithm and how to run them.</p>
+<p><strong>GENIE3:</strong> a regression-tree based algorithm that decomposes the prediction of GRNs for <em>n</em> genes into <em>n</em> regression problems. For each regression problem, the expression profile of a target gene is predicted from the expression profiles of all other genes using random forests (default) or extra-trees.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="annotated-cell-6"><pre class="sourceCode r code-annotation-code code-with-copy code-annotated"><code class="sourceCode r"><span id="annotated-cell-6-1"><a href="#annotated-cell-6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Infer a GRN with GENIE3</span></span>
+<span id="annotated-cell-6-2"><a href="#annotated-cell-6-2" aria-hidden="true" tabindex="-1"></a>grn_genie3 <span class="ot">&lt;-</span> <span class="fu">grn_infer</span>(</span>
+<span id="annotated-cell-6-3"><a href="#annotated-cell-6-3" aria-hidden="true" tabindex="-1"></a>    final_exp, </span>
+<span id="annotated-cell-6-4"><a href="#annotated-cell-6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"genie3"</span>, </span>
+<span id="annotated-cell-6-5"><a href="#annotated-cell-6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulators =</span> gma_tfs,</span>
+<a class="code-annotation-anchor" data-target-cell="annotated-cell-6" data-target-annotation="1" onclick="event.preventDefault();">1</a><span id="annotated-cell-6-6" class="code-annotation-target"><a href="#annotated-cell-6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">nTrees =</span> <span class="dv">10</span></span>
+<span id="annotated-cell-6-7"><a href="#annotated-cell-6-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="annotated-cell-6-8"><a href="#annotated-cell-6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="annotated-cell-6-9"><a href="#annotated-cell-6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(grn_genie3)</span><div class="code-annotation-gutter-bg"></div><div class="code-annotation-gutter"></div></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-annotation">
+<dl class="code-annotation-container-grid">
+<dt data-target-cell="annotated-cell-6" data-target-annotation="1">1</dt>
+<dd>
+<span data-code-annotation="1" data-code-lines="6" data-code-cell="annotated-cell-6">Here, for demonstration purposes, we’re using only 10 trees, but one should use at least 1000 trees (default).</span>
+</dd>
+</dl>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Node1           Node2    Weight
+109961 Glyma.20G209700 Glyma.03G245300 0.3373682
+160260 Glyma.12G216100 Glyma.07G149600 0.3122377
+105394 Glyma.02G217800 Glyma.03G189100 0.2984574
+211825 Glyma.16G012600 Glyma.14G201800 0.2816710
+186303 Glyma.06G034000 Glyma.13G149100 0.2773383
+51236  Glyma.11G049300 Glyma.19G121600 0.2736725</code></pre>
+</div>
+</div>
+<p><strong>ARACNE:</strong> information-theoretic algorithm that aims to remove indirect interactions inferred by coexpression.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Infer a GRN with ARACNE</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>grn_aracne <span class="ot">&lt;-</span> <span class="fu">grn_infer</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    final_exp, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"aracne"</span>, </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulators =</span> gma_tfs</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(grn_aracne)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Node1           Node2   Weight
+70935  Glyma.20G209700 Glyma.01G037200 1.728753
+89918  Glyma.04G226700 Glyma.02G149600 1.643472
+238984 Glyma.07G212400 Glyma.10G224500 1.623464
+211176 Glyma.07G212400 Glyma.14G195200 1.607392
+91633  Glyma.20G209700 Glyma.02G195300 1.552133
+290894 Glyma.04G226700 Glyma.09G143800 1.542347</code></pre>
+</div>
+</div>
+<p><strong>CLR:</strong> extension of the relevance networks algorithm that uses mutual information to identify regulatory interactions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Infer a GRN with CLR</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>grn_clr <span class="ot">&lt;-</span> <span class="fu">grn_infer</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    final_exp,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">"clr"</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulators =</span> gma_tfs</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(grn_clr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Node1           Node2   Weight
+260329 Glyma.15G152000 Glyma.12G009200 14.83700
+154366 Glyma.19G260900 Glyma.07G049400 13.98161
+197182 Glyma.16G017400 Glyma.13G289600 13.27572
+97603  Glyma.15G029500 Glyma.02G309500 12.62377
+55258  Glyma.13G344700 Glyma.19G211600 12.54761
+226254 Glyma.16G017400 Glyma.09G227100 12.49256</code></pre>
+</div>
+</div>
+<p>Note that these functions return a fully connected graph, so you’ll need to filter the edge list to remove spurious edges. One way to do it is by removing edges below a particular value for the <code>Weight</code> variable. However, since choosing a cut-off is not straightforward and often arbitrary, you can use the function <code>grn_filter()</code> to perform a graph-based filtering. Briefly, this function splits the network in <em>N</em> subnetworks of increasing size and calculates the scale-free topology fit for each subgraph. In the end, the subgraph with the best scale-free topology fit will be chosen as the optimum.</p>
+<p>This is how you can use it:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter the GENIE3-derived GRN based on optimal SFT fit</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>filtered_grn <span class="ot">&lt;-</span> <span class="fu">grn_filter</span>(grn_genie3)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(filtered_grn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Node1           Node2
+109961 Glyma.20G209700 Glyma.03G245300
+160260 Glyma.12G216100 Glyma.07G149600
+105394 Glyma.02G217800 Glyma.03G189100
+211825 Glyma.16G012600 Glyma.14G201800
+186303 Glyma.06G034000 Glyma.13G149100
+51236  Glyma.11G049300 Glyma.19G121600</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Filter the GRN obtained with GENIE3 to keep only edges with weight $$0.2. Then, answer the questions below:</li>
+</ol>
+<ul>
+<li>What is the top TF in number of targets?</li>
+<li>What genes are regulated by the top TF?</li>
+</ul>
+<ol start="2" type="1">
+<li>What is the rank of the edge <em>Glyma.07G212400 -&gt; Glyma.10G224500</em> in all three networks? What is the mean rank?</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="do">## top TF</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>genie3_filt <span class="ot">&lt;-</span> grn_genie3[grn_genie3<span class="sc">$</span>Weight <span class="sc">&gt;=</span> <span class="fl">0.2</span>, ]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">sort</span>(<span class="fu">table</span>(genie3_filt<span class="sc">$</span>Node1), <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Glyma.06G034000 Glyma.16G012600 Glyma.20G006400 Glyma.08G250700 Glyma.02G217800 
+              8               7               7               6               5 
+Glyma.12G040600 
+              4 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="do">## targets of the top TF</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>genie3_filt[genie3_filt<span class="sc">$</span>Node1 <span class="sc">==</span> <span class="st">"Glyma.06G034000"</span>, <span class="st">"Node2"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Glyma.13G149100" "Glyma.05G033500" "Glyma.02G083702" "Glyma.19G195500"
+[5] "Glyma.19G225500" "Glyma.20G189300" "Glyma.09G011200" "Glyma.20G132651"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>edge <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Glyma.07G212400"</span>, <span class="st">"Glyma.10G224500"</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>rank_genie3 <span class="ot">&lt;-</span> <span class="fu">which</span>(grn_genie3<span class="sc">$</span>Node1 <span class="sc">==</span> edge[<span class="dv">1</span>] <span class="sc">&amp;</span> grn_genie3<span class="sc">$</span>Node2 <span class="sc">==</span> edge[<span class="dv">2</span>])</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>rank_aracne <span class="ot">&lt;-</span> <span class="fu">which</span>(grn_aracne<span class="sc">$</span>Node1 <span class="sc">==</span> edge[<span class="dv">1</span>] <span class="sc">&amp;</span> grn_aracne<span class="sc">$</span>Node2 <span class="sc">==</span> edge[<span class="dv">2</span>])</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>rank_clr <span class="ot">&lt;-</span> <span class="fu">which</span>(grn_clr<span class="sc">$</span>Node1 <span class="sc">==</span> edge[<span class="dv">1</span>] <span class="sc">&amp;</span> grn_clr<span class="sc">$</span>Node2 <span class="sc">==</span> edge[<span class="dv">2</span>])</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(rank_genie3, rank_aracne, rank_clr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 168</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="wisdom-of-the-crowds" class="level3" data-number="4.2.2">
+<h3 data-number="4.2.2" class="anchored" data-anchor-id="wisdom-of-the-crowds"><span class="header-section-number">4.2.2</span> Wisdom of the crowds</h3>
+<p>The “wisdom of the crowds” principle consists in combining inferences from multiple methods to obtain robust and more accurate predictions. As <span class="citation" data-cites="marbach2012wisdom">Marbach et al. (<a href="#ref-marbach2012wisdom" role="doc-biblioref">2012</a>)</span> stated in their paper:</p>
+<blockquote class="blockquote">
+<p>We observe that no single inference method performs optimally across all datasets. In contrast, integration of predictions from multiple inference methods shows robust and high performance across diverse datasets.</p>
+</blockquote>
+<p>In <strong>BioNERO</strong>, this is performed by computing average edge ranks across different networks, exactly as you did in the previous practice problem, and it can be executed with the function <code>exp2grn()</code>. After computing average ranks for each edge, <code>exp2grn()</code> sorts the edges based on ranks (in increasing order) and uses the graph-based filtering approach (as in <code>grn_filter()</code>) to remove spurious edges.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Infer GRN</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>grn <span class="ot">&lt;-</span> <span class="fu">exp2grn</span>(</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> final_exp,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">regulators =</span> gma_tfs,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">nTrees =</span> <span class="dv">10</span> <span class="co"># again, using only 10 trees for demonstration purposes</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(grn)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           Regulator          Target
+376  Glyma.04G226700 Glyma.02G149600
+2474 Glyma.20G209700 Glyma.01G037200
+260  Glyma.03G247100 Glyma.02G022000
+2020 Glyma.17G144100 Glyma.04G228400
+1403 Glyma.12G117000 Glyma.11G137300
+1056 Glyma.09G011800 Glyma.09G143800</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Explore the output of the GRN inferred with <code>exp2grn()</code> and answer the following questions.</p>
+<ul>
+<li>What regulator has the greatest number of targets?</li>
+<li>What genes are regulated by the top regulator?</li>
+<li>What is the minimum, maximum, mean, and median number of regulators per target?</li>
+</ul>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">sort</span>(<span class="fu">table</span>(grn<span class="sc">$</span>Regulator), <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Glyma.15G019400 Glyma.05G103300 Glyma.20G006400 Glyma.20G051500 Glyma.07G212400 
+             13              12              12              12              11 
+Glyma.08G115300 
+             11 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>grn[grn<span class="sc">$</span>Regulator <span class="sc">==</span> <span class="st">"Glyma.15G019400"</span>, <span class="st">"Target"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] "Glyma.19G089800" "Glyma.13G116200" "Glyma.01G211300" "Glyma.11G252200"
+ [5] "Glyma.08G330600" "Glyma.10G070900" "Glyma.12G181500" "Glyma.07G239200"
+ [9] "Glyma.18G172300" "Glyma.15G023700" "Glyma.07G261000" "Glyma.03G148300"
+[13] "Glyma.20G159900"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q3</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>reg_per_target <span class="ot">&lt;-</span> grn <span class="sc">|&gt;</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(Target) <span class="sc">|&gt;</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(<span class="at">Nregs =</span> <span class="fu">length</span>(<span class="fu">unique</span>(Regulator)))</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(reg_per_target<span class="sc">$</span>Nregs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  1.000   1.000   1.000   1.296   1.000   4.000 </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="grn-analyses" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="grn-analyses"><span class="header-section-number">4.3</span> GRN analyses</h2>
+<p>After you have a GRN, there are many things you can do with it. The downstream analyses you should do will really depend on the question you’re trying to address. Nevertheless, in this section you will see examples of common analyses people do, but keep in mind that these are not the only ones; you can (and should) be creative and explore different aspects of the GRN based on your research project.</p>
+<section id="finding-grn-hubs" class="level3" data-number="4.3.1">
+<h3 data-number="4.3.1" class="anchored" data-anchor-id="finding-grn-hubs"><span class="header-section-number">4.3.1</span> Finding GRN hubs</h3>
+<p>Finding hubs in GRNs is a very common practice in publications, and the goal here is to identify the so-called <em>master regulators</em> of particular biological processes.</p>
+<p>This can be performed with the function <code>get_hubs_grn()</code>, which returns the top 10% regulators (adjustable) based on degree.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Find GRN hubs</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>grn_hubs <span class="ot">&lt;-</span> <span class="fu">get_hubs_grn</span>(grn)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(grn_hubs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>             Gene Degree
+1 Glyma.15G019400     13
+2 Glyma.05G103300     12
+3 Glyma.20G006400     12
+4 Glyma.20G051500     12
+5 Glyma.20G209700     11
+6 Glyma.19G022200     11</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>What is the minimum, maximum, mean, and median degree for GRN hubs?</p>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(grn_hubs<span class="sc">$</span>Degree)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  5.000   6.000   7.000   7.562   9.000  13.000 </code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="exploring-and-visualizing-grns" class="level3" data-number="4.3.2">
+<h3 data-number="4.3.2" class="anchored" data-anchor-id="exploring-and-visualizing-grns"><span class="header-section-number">4.3.2</span> Exploring and visualizing GRNs</h3>
+<p>Another common analysis is to extract subgraphs for a particular group of genes (usually known to be involved in a process of interest) and plot them.</p>
+<p>First, let’s plot the entire network. This is feasible here because we specifically filtered the expression data to have a small network (for demonstration purposes), but it is often not feasible in real-world networks.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the entire network</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>p_all <span class="ot">&lt;-</span> <span class="fu">plot_grn</span>(grn)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>p_all</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>By default, only the top 5 hubs are labeled, but you can change that based on your preferences. For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Label the top 10 hubs</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(grn, <span class="at">top_n_hubs =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Hide all labels</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(grn, <span class="at">show_labels =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-15-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Now, we will visualize the subgraph for the top hub and its targets. You can do that by filtering the edge list to keep only edges containing the gene(s) you’re interested (here, the top hub).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only edges containing the top hub</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>top_hub <span class="ot">&lt;-</span> grn_hubs<span class="sc">$</span>Gene[<span class="dv">1</span>]</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>edges_top_hub <span class="ot">&lt;-</span> grn[grn<span class="sc">$</span>Regulator <span class="sc">==</span> top_hub, ]</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(edges_top_hub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           Regulator          Target
+1789 Glyma.15G019400 Glyma.19G089800
+1785 Glyma.15G019400 Glyma.13G116200
+1770 Glyma.15G019400 Glyma.01G211300
+1783 Glyma.15G019400 Glyma.11G252200
+1779 Glyma.15G019400 Glyma.08G330600
+1781 Glyma.15G019400 Glyma.10G070900</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize the subgraph</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges_top_hub)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>With smaller subgraphs, it’s nice to play with parameters in <code>plot_grn()</code> to customize your visualization. For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Show all nodes</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges_top_hub, <span class="at">show_labels =</span> <span class="st">"all"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Finally, since the output of <code>plot_grn()</code> is a ggplot object (same for <code>plot_gcn()</code> and <code>plot_ppi()</code>), you can store it in an object and modify it later. For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>p_grn <span class="ot">&lt;-</span> <span class="fu">plot_grn</span>(edges_top_hub)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Change colors of regulators and targets</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>p_grn <span class="sc">+</span></span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"dodgerblue3"</span>, <span class="st">"firebrick3"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove legend</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>p_grn <span class="sc">+</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-18-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Create a subgraph with the top 10 hubs and their targets. Then, create different network visualizations based on the following instructions:</p>
+<p><strong>Network 1:</strong> Default parameters in <code>plot_grn()</code></p>
+<p><strong>Network 2:</strong> Label all hubs.</p>
+<p><strong>Network 3:</strong> Label all hubs and change node colors (the fill aesthetics) so that regulators have the colors “black” and targets have the color “grey70”.</p>
+<p><strong>Network 4:</strong> Label all hubs and add the following plot title: “Network representation of the top 10 hubs and their targets”</p>
+<p><strong>Network 5:</strong> Label all hubs, change the network layout function to <code>with_gem</code>, and move the legend to the bottom of the plot.</p>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>edges <span class="ot">&lt;-</span> grn[grn<span class="sc">$</span>Regulator <span class="sc">%in%</span> grn_hubs<span class="sc">$</span>Gene[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>], ]</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges, <span class="at">show_labels =</span> <span class="st">"allhubs"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 3</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges, <span class="at">show_labels =</span> <span class="st">"allhubs"</span>) <span class="sc">+</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"grey70"</span>, <span class="st">"black"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-19-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 4</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges, <span class="at">show_labels =</span> <span class="st">"allhubs"</span>) <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Network representation of the top 10 hubs and their targets"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-19-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grn</span>(edges, <span class="at">show_labels =</span> <span class="st">"allhubs"</span>, <span class="at">layout =</span> igraph<span class="sc">::</span>with_gem) <span class="sc">+</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="04_inference_and_analysis_of_GRNs_files/figure-html/unnamed-chunk-19-5.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="session-information" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="session-information">Session information</h2>
+<p>This chapter was created under the following conditions:</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.3.0 (2023-04-21)
+ os       Ubuntu 20.04.5 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/Brussels
+ date     2023-09-09
+ pandoc   3.1.1 @ /usr/lib/rstudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ package              * version   date (UTC) lib source
+ abind                  1.4-5     2016-07-21 [1] CRAN (R 4.3.0)
+ annotate               1.78.0    2023-04-25 [1] Bioconductor
+ AnnotationDbi          1.62.0    2023-04-25 [1] Bioconductor
+ backports              1.4.1     2021-12-13 [1] CRAN (R 4.3.0)
+ base64enc              0.1-3     2015-07-28 [1] CRAN (R 4.3.0)
+ Biobase              * 2.60.0    2023-04-25 [1] Bioconductor
+ BiocGenerics         * 0.46.0    2023-04-25 [1] Bioconductor
+ BiocParallel           1.34.0    2023-04-25 [1] Bioconductor
+ BioNERO              * 1.9.7     2023-08-23 [1] Bioconductor
+ Biostrings             2.68.0    2023-04-25 [1] Bioconductor
+ bit                    4.0.5     2022-11-15 [1] CRAN (R 4.3.0)
+ bit64                  4.0.5     2020-08-30 [1] CRAN (R 4.3.0)
+ bitops                 1.0-7     2021-04-24 [1] CRAN (R 4.3.0)
+ blob                   1.2.4     2023-03-17 [1] CRAN (R 4.3.0)
+ cachem                 1.0.8     2023-05-01 [1] CRAN (R 4.3.0)
+ checkmate              2.2.0     2023-04-27 [1] CRAN (R 4.3.0)
+ circlize               0.4.15    2022-05-10 [1] CRAN (R 4.3.0)
+ cli                    3.6.1     2023-03-23 [1] CRAN (R 4.3.0)
+ clue                   0.3-64    2023-01-31 [1] CRAN (R 4.3.0)
+ cluster                2.1.4     2022-08-22 [4] CRAN (R 4.2.1)
+ coda                   0.19-4    2020-09-30 [1] CRAN (R 4.3.0)
+ codetools              0.2-19    2023-02-01 [4] CRAN (R 4.2.2)
+ colorspace             2.1-0     2023-01-23 [1] CRAN (R 4.3.0)
+ ComplexHeatmap         2.16.0    2023-04-25 [1] Bioconductor
+ crayon                 1.5.2     2022-09-29 [1] CRAN (R 4.3.0)
+ data.table             1.14.8    2023-02-17 [1] CRAN (R 4.3.0)
+ DBI                    1.1.3     2022-06-18 [1] CRAN (R 4.3.0)
+ DelayedArray           0.26.1    2023-05-01 [1] Bioconductor
+ digest                 0.6.33    2023-07-07 [1] CRAN (R 4.3.0)
+ doParallel             1.0.17    2022-02-07 [1] CRAN (R 4.3.0)
+ dplyr                * 1.1.2     2023-04-20 [1] CRAN (R 4.3.0)
+ dynamicTreeCut         1.63-1    2016-03-11 [1] CRAN (R 4.3.0)
+ edgeR                  3.42.0    2023-04-25 [1] Bioconductor
+ evaluate               0.21      2023-05-05 [1] CRAN (R 4.3.0)
+ fansi                  1.0.4     2023-01-22 [1] CRAN (R 4.3.0)
+ farver                 2.1.1     2022-07-06 [1] CRAN (R 4.3.0)
+ fastcluster            1.2.3     2021-05-24 [1] CRAN (R 4.3.0)
+ fastmap                1.1.1     2023-02-24 [1] CRAN (R 4.3.0)
+ forcats              * 1.0.0     2023-01-29 [1] CRAN (R 4.3.0)
+ foreach                1.5.2     2022-02-02 [1] CRAN (R 4.3.0)
+ foreign                0.8-82    2022-01-13 [4] CRAN (R 4.1.2)
+ Formula                1.2-5     2023-02-24 [1] CRAN (R 4.3.0)
+ genefilter             1.82.0    2023-04-25 [1] Bioconductor
+ generics               0.1.3     2022-07-05 [1] CRAN (R 4.3.0)
+ GENIE3                 1.22.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDb         * 1.36.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDbData       1.2.10    2023-04-28 [1] Bioconductor
+ GenomicRanges        * 1.52.0    2023-04-25 [1] Bioconductor
+ GetoptLong             1.0.5     2020-12-15 [1] CRAN (R 4.3.0)
+ ggdendro               0.1.23    2022-02-16 [1] CRAN (R 4.3.0)
+ ggnetwork              0.5.12    2023-03-06 [1] CRAN (R 4.3.0)
+ ggplot2              * 3.4.1     2023-02-10 [1] CRAN (R 4.3.0)
+ ggrepel                0.9.3     2023-02-03 [1] CRAN (R 4.3.0)
+ GlobalOptions          0.1.2     2020-06-10 [1] CRAN (R 4.3.0)
+ glue                   1.6.2     2022-02-24 [1] CRAN (R 4.3.0)
+ GO.db                  3.17.0    2023-05-02 [1] Bioconductor
+ gridExtra              2.3       2017-09-09 [1] CRAN (R 4.3.0)
+ gtable                 0.3.3     2023-03-21 [1] CRAN (R 4.3.0)
+ here                 * 1.0.1     2020-12-13 [1] CRAN (R 4.3.0)
+ Hmisc                  5.0-1     2023-03-08 [1] CRAN (R 4.3.0)
+ hms                    1.1.3     2023-03-21 [1] CRAN (R 4.3.0)
+ htmlTable              2.4.1     2022-07-07 [1] CRAN (R 4.3.0)
+ htmltools              0.5.5     2023-03-23 [1] CRAN (R 4.3.0)
+ htmlwidgets            1.6.2     2023-03-17 [1] CRAN (R 4.3.0)
+ httr                   1.4.5     2023-02-24 [1] CRAN (R 4.3.0)
+ igraph                 1.4.2     2023-04-07 [1] CRAN (R 4.3.0)
+ impute                 1.74.0    2023-04-25 [1] Bioconductor
+ intergraph             2.0-2     2016-12-05 [1] CRAN (R 4.3.0)
+ IRanges              * 2.34.0    2023-04-25 [1] Bioconductor
+ iterators              1.0.14    2022-02-05 [1] CRAN (R 4.3.0)
+ jsonlite               1.8.7     2023-06-29 [1] CRAN (R 4.3.0)
+ KEGGREST               1.40.0    2023-04-25 [1] Bioconductor
+ knitr                  1.43      2023-05-25 [1] CRAN (R 4.3.0)
+ labeling               0.4.2     2020-10-20 [1] CRAN (R 4.3.0)
+ lattice                0.20-45   2021-09-22 [4] CRAN (R 4.2.0)
+ lifecycle              1.0.3     2022-10-07 [1] CRAN (R 4.3.0)
+ limma                  3.56.0    2023-04-25 [1] Bioconductor
+ locfit                 1.5-9.7   2023-01-02 [1] CRAN (R 4.3.0)
+ lubridate            * 1.9.2     2023-02-10 [1] CRAN (R 4.3.0)
+ magrittr               2.0.3     2022-03-30 [1] CRAN (R 4.3.0)
+ MASS                   7.3-58.2  2023-01-23 [4] CRAN (R 4.2.2)
+ Matrix                 1.5-1     2022-09-13 [4] CRAN (R 4.2.1)
+ MatrixGenerics       * 1.12.2    2023-06-09 [1] Bioconductor
+ matrixStats          * 1.0.0     2023-06-02 [1] CRAN (R 4.3.0)
+ memoise                2.0.1     2021-11-26 [1] CRAN (R 4.3.0)
+ mgcv                   1.8-41    2022-10-21 [4] CRAN (R 4.2.1)
+ minet                  3.58.0    2023-04-25 [1] Bioconductor
+ munsell                0.5.0     2018-06-12 [1] CRAN (R 4.3.0)
+ NetRep                 1.2.6     2023-01-06 [1] CRAN (R 4.3.0)
+ network                1.18.1    2023-01-24 [1] CRAN (R 4.3.0)
+ nlme                   3.1-162   2023-01-31 [4] CRAN (R 4.2.2)
+ nnet                   7.3-18    2022-09-28 [4] CRAN (R 4.2.1)
+ patchwork              1.1.2     2022-08-19 [1] CRAN (R 4.3.0)
+ pillar                 1.9.0     2023-03-22 [1] CRAN (R 4.3.0)
+ pkgconfig              2.0.3     2019-09-22 [1] CRAN (R 4.3.0)
+ plyr                   1.8.8     2022-11-11 [1] CRAN (R 4.3.0)
+ png                    0.1-8     2022-11-29 [1] CRAN (R 4.3.0)
+ preprocessCore         1.62.0    2023-04-25 [1] Bioconductor
+ purrr                * 1.0.1     2023-01-10 [1] CRAN (R 4.3.0)
+ R6                     2.5.1     2021-08-19 [1] CRAN (R 4.3.0)
+ RColorBrewer           1.1-3     2022-04-03 [1] CRAN (R 4.3.0)
+ Rcpp                   1.0.10    2023-01-22 [1] CRAN (R 4.3.0)
+ RCurl                  1.98-1.12 2023-03-27 [1] CRAN (R 4.3.0)
+ readr                * 2.1.4     2023-02-10 [1] CRAN (R 4.3.0)
+ reshape2               1.4.4     2020-04-09 [1] CRAN (R 4.3.0)
+ RhpcBLASctl            0.23-42   2023-02-11 [1] CRAN (R 4.3.0)
+ rjson                  0.2.21    2022-01-09 [1] CRAN (R 4.3.0)
+ rlang                  1.1.1     2023-04-28 [1] CRAN (R 4.3.0)
+ rmarkdown              2.23      2023-07-01 [1] CRAN (R 4.3.0)
+ rpart                  4.1.19    2022-10-21 [4] CRAN (R 4.2.1)
+ rprojroot              2.0.3     2022-04-02 [1] CRAN (R 4.3.0)
+ RSQLite                2.3.1     2023-04-03 [1] CRAN (R 4.3.0)
+ rstudioapi             0.14      2022-08-22 [1] CRAN (R 4.3.0)
+ S4Arrays               1.0.1     2023-05-01 [1] Bioconductor
+ S4Vectors            * 0.38.0    2023-04-25 [1] Bioconductor
+ scales                 1.2.1     2022-08-20 [1] CRAN (R 4.3.0)
+ sessioninfo            1.2.2     2021-12-06 [1] CRAN (R 4.3.0)
+ shape                  1.4.6     2021-05-19 [1] CRAN (R 4.3.0)
+ statmod                1.5.0     2023-01-06 [1] CRAN (R 4.3.0)
+ statnet.common         4.8.0     2023-01-24 [1] CRAN (R 4.3.0)
+ stringi                1.7.12    2023-01-11 [1] CRAN (R 4.3.0)
+ stringr              * 1.5.0     2022-12-02 [1] CRAN (R 4.3.0)
+ SummarizedExperiment * 1.30.1    2023-05-01 [1] Bioconductor
+ survival               3.5-3     2023-02-12 [4] CRAN (R 4.2.2)
+ sva                    3.48.0    2023-04-25 [1] Bioconductor
+ tibble               * 3.2.1     2023-03-20 [1] CRAN (R 4.3.0)
+ tidyr                * 1.3.0     2023-01-24 [1] CRAN (R 4.3.0)
+ tidyselect             1.2.0     2022-10-10 [1] CRAN (R 4.3.0)
+ tidyverse            * 2.0.0     2023-02-22 [1] CRAN (R 4.3.0)
+ timechange             0.2.0     2023-01-11 [1] CRAN (R 4.3.0)
+ tzdb                   0.3.0     2022-03-28 [1] CRAN (R 4.3.0)
+ utf8                   1.2.3     2023-01-31 [1] CRAN (R 4.3.0)
+ vctrs                  0.6.3     2023-06-14 [1] CRAN (R 4.3.0)
+ WGCNA                  1.72-1    2023-01-18 [1] CRAN (R 4.3.0)
+ withr                  2.5.0     2022-03-03 [1] CRAN (R 4.3.0)
+ xfun                   0.39      2023-04-20 [1] CRAN (R 4.3.0)
+ XML                    3.99-0.14 2023-03-19 [1] CRAN (R 4.3.0)
+ xtable                 1.8-4     2019-04-21 [1] CRAN (R 4.3.0)
+ XVector                0.40.0    2023-04-25 [1] Bioconductor
+ yaml                   2.3.7     2023-01-23 [1] CRAN (R 4.3.0)
+ zlibbioc               1.46.0    2023-04-25 [1] Bioconductor
+
+ [1] /home/faalm/R/x86_64-pc-linux-gnu-library/4.3
+ [2] /usr/local/lib/R/site-library
+ [3] /usr/lib/R/site-library
+ [4] /usr/lib/R/library
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-almeida2023soybean" class="csl-entry" role="listitem">
+Almeida-Silva, Fabricio, Francisnei Pedrosa-Silva, and Thiago M Venancio. 2023. <span>“The Soybean Expression Atlas V2: A Comprehensive Database of over 5000 RNA-Seq Samples.”</span> <em>bioRxiv</em>, 2023–04.
+</div>
+<div id="ref-faith2007large" class="csl-entry" role="listitem">
+Faith, Jeremiah J, Boris Hayete, Joshua T Thaden, Ilaria Mogno, Jamey Wierzbowski, Guillaume Cottarel, Simon Kasif, James J Collins, and Timothy S Gardner. 2007. <span>“Large-Scale Mapping and Validation of Escherichia Coli Transcriptional Regulation from a Compendium of Expression Profiles.”</span> <em>PLoS Biology</em> 5 (1): e8.
+</div>
+<div id="ref-jin2016planttfdb" class="csl-entry" role="listitem">
+Jin, Jinpu, Feng Tian, De-Chang Yang, Yu-Qi Meng, Lei Kong, Jingchu Luo, and Ge Gao. 2016. <span>“PlantTFDB 4.0: Toward a Central Hub for Transcription Factors and Regulatory Interactions in Plants.”</span> <em>Nucleic Acids Research</em>, gkw982.
+</div>
+<div id="ref-marbach2012wisdom" class="csl-entry" role="listitem">
+Marbach, Daniel, James C Costello, Robert Küffner, Nicole M Vega, Robert J Prill, Diogo M Camacho, Kyle R Allison, Manolis Kellis, James J Collins, et al. 2012. <span>“Wisdom of Crowds for Robust Gene Network Inference.”</span> <em>Nature Methods</em> 9 (8): 796–804.
+</div>
+<div id="ref-margolin2006aracne" class="csl-entry" role="listitem">
+Margolin, Adam A, Ilya Nemenman, Katia Basso, Chris Wiggins, Gustavo Stolovitzky, Riccardo Dalla Favera, and Andrea Califano. 2006. <span>“ARACNE: An Algorithm for the Reconstruction of Gene Regulatory Networks in a Mammalian Cellular Context.”</span> In <em>BMC Bioinformatics</em>, 7:1–15. 1. BioMed Central.
+</div>
+<div id="ref-zhu2022transcriptomic" class="csl-entry" role="listitem">
+Zhu, Longming, Qinghua Yang, Xiaomin Yu, Xujun Fu, Hangxia Jin, and Fengjie Yuan. 2022. <span>“Transcriptomic and Metabolomic Analyses Reveal a Potential Mechanism to Improve Soybean Resistance to Anthracnose.”</span> <em>Frontiers in Plant Science</em> 13: 850829.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/03_network-based_data_integration.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/appendix_01_data_acquisition.html" class="pagination-link">
+        <span class="nav-page-text">Appendix: Data acquisition</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>

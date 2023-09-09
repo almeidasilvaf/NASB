@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.433">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Network Analysis in Systems Biology with R/Bioconductor - 3&nbsp; Network-based data integration for gene discovery</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../chapters/04_inference_and_analysis_of_GRNs.html" rel="next">
+<link href="../chapters/02_network_comparison.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../chapters/03_network-based_data_integration.html"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">Network Analysis in Systems Biology with R/Bioconductor</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/00_setup.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Setup</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/01_inference_and_analysis_of_GCNs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Inference and analysis gene coexpression networks (GCNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/02_network_comparison.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Dealing with multiple data sets: consensus modules and module preservation</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/03_network-based_data_integration.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/04_inference_and_analysis_of_GRNs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../chapters/appendix_01_data_acquisition.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Appendix: Data acquisition</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#getting-to-know-the-example-data" id="toc-getting-to-know-the-example-data" class="nav-link active" data-scroll-target="#getting-to-know-the-example-data"><span class="header-section-number">3.1</span> Getting to know the example data</a></li>
+  <li><a href="#exploratory-data-analyses" id="toc-exploratory-data-analyses" class="nav-link" data-scroll-target="#exploratory-data-analyses"><span class="header-section-number">3.2</span> Exploratory data analyses</a></li>
+  <li><a href="#mining-high-confidence-candidate-genes" id="toc-mining-high-confidence-candidate-genes" class="nav-link" data-scroll-target="#mining-high-confidence-candidate-genes"><span class="header-section-number">3.3</span> Mining high-confidence candidate genes</a></li>
+  <li><a href="#scoring-prioritized-candidate-genes" id="toc-scoring-prioritized-candidate-genes" class="nav-link" data-scroll-target="#scoring-prioritized-candidate-genes"><span class="header-section-number">3.4</span> Scoring prioritized candidate genes</a></li>
+  <li><a href="#session-information" id="toc-session-information" class="nav-link" data-scroll-target="#session-information">Session information</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Network-based data integration for gene discovery</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>In this lesson, you will learn how to use networks to integrate data and prioritize genes associated with traits of interest. At the end of the lesson, you will be able to:</p>
+<ul>
+<li>work with <code>GRanges</code> objects</li>
+<li>integrate GWAS-derived SNPs with coexpression networks to trait-related genes</li>
+</ul>
+<p>Let’s start by loading the packages we will use.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>) <span class="co"># for reproducibility</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(SummarizedExperiment)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GenomicRanges)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cageminer)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(here)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="getting-to-know-the-example-data" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="getting-to-know-the-example-data"><span class="header-section-number">3.1</span> Getting to know the example data</h2>
+<p>In this chapter, we will use data from <span class="citation" data-cites="almeida2021integration">Almeida-Silva and Venancio (<a href="#ref-almeida2021integration" role="doc-biblioref">2021</a>)</span>, available in the <code>data/</code> directory of the <a href="https://github.com/almeidasilvaf/NASB">GitHub repo associated with this course</a>. The data set comprises:</p>
+<ul>
+<li>GWAS-derived SNPs associated with soybean resistance to multiple phytopathogenic fungi.</li>
+<li>RNA-seq data of soybean response to multiple phytopathogenic fungi.</li>
+</ul>
+<p>Our goal here is to prioritize candidate genes associated with resistance to fungal diseases.</p>
+<p>The expression data are available in a <code>SummarizedExperiment</code> object, which by now should be a familiar data class to you.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load expression data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"se_soyfungi.rda"</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Take a look at the object</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>se_soyfungi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>class: SummarizedExperiment 
+dim: 20272 127 
+metadata(0):
+assays(1): ''
+rownames(20272): Glyma.01G000100 Glyma.01G000137 ... Glyma.U032705
+  Glyma.U039400
+rowData names(0):
+colnames(127): SAMD00117549 SAMD00117550 ... SAMN13743072 SAMN13743073
+colData names(4): Pathogen Treatment Tissue Pathogen_Treatment</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colData</span>(se_soyfungi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>DataFrame with 127 rows and 4 columns
+                        Pathogen       Treatment      Tissue
+                     &lt;character&gt;     &lt;character&gt; &lt;character&gt;
+SAMD00117549         Ppachyrhizi control_res_24h      leaves
+SAMD00117550         Ppachyrhizi  stress_res_24h      leaves
+SAMD00117552         Ppachyrhizi  stress_res_24h      leaves
+SAMD00117551         Ppachyrhizi  stress_res_24h      leaves
+SAMD00117541         Ppachyrhizi control_sus_24h      leaves
+...                          ...             ...         ...
+SAMN13743069          Foxysporum          stress        root
+SAMN13743070          Foxysporum          stress        root
+SAMN13743071 Foxysporum_Fmosseae          stress        root
+SAMN13743072 Foxysporum_Fmosseae          stress        root
+SAMN13743073 Foxysporum_Fmosseae          stress        root
+                 Pathogen_Treatment
+                        &lt;character&gt;
+SAMD00117549 Ppachyrhizi_control_..
+SAMD00117550 Ppachyrhizi_stress_r..
+SAMD00117552 Ppachyrhizi_stress_r..
+SAMD00117551 Ppachyrhizi_stress_r..
+SAMD00117541 Ppachyrhizi_control_..
+...                             ...
+SAMN13743069      Foxysporum_stress
+SAMN13743070      Foxysporum_stress
+SAMN13743071 Foxysporum_Fmosseae_..
+SAMN13743072 Foxysporum_Fmosseae_..
+SAMN13743073 Foxysporum_Fmosseae_..</code></pre>
+</div>
+</div>
+<p>We will also need an object containing information on the genomic coordinates of all genes in the soybean genome. If you have some experience with genomic data analyses, you probably know that this kind of information is usually stored in GFF3/GTF files. In Bioconductor, the standard data class to store genomic coordinates is called <code>GRanges</code>. You can create <code>GRanges</code> objects manually or directly from GFF3/GTF files using the <code>import()</code> function from the <em><a href="https://bioconductor.org/packages/3.17/rtracklayer">rtracklayer</a></em> package. Let’s demonstrate how this works by reading a GFF3 file with soybean gene ranges onto a <code>GRanges</code> object:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load GFF3 file into the R session as a `GRanges` object</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>gma_ranges <span class="ot">&lt;-</span> rtracklayer<span class="sc">::</span><span class="fu">import</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gma_primary_transcripts.gff3.gz"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>gma_ranges</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 791305 ranges and 16 metadata columns:
+              seqnames      ranges strand |         source            type
+                 &lt;Rle&gt;   &lt;IRanges&gt;  &lt;Rle&gt; |       &lt;factor&gt;        &lt;factor&gt;
+       [1]       Chr01 27355-28320      - | JGI Wm82.a2.v1 gene           
+       [2]       Chr01 27355-28320      - | JGI Wm82.a2.v1 mRNA           
+       [3]       Chr01 27355-27824      - | JGI Wm82.a2.v1 exon           
+       [4]       Chr01 27355-27655      - | JGI Wm82.a2.v1 three_prime_UTR
+       [5]       Chr01 27656-27824      - | JGI Wm82.a2.v1 CDS            
+       ...         ...         ...    ... .            ...             ...
+  [791301] scaffold_99 27528-27561      - | JGI Wm82.a2.v1            CDS 
+  [791302] scaffold_99 27574-28051      - | JGI Wm82.a2.v1            exon
+  [791303] scaffold_99 27574-28051      - | JGI Wm82.a2.v1            CDS 
+  [791304] scaffold_99 29024-29105      - | JGI Wm82.a2.v1            exon
+  [791305] scaffold_99 29024-29105      - | JGI Wm82.a2.v1            CDS 
+               score     phase                     ID       pacid
+           &lt;numeric&gt; &lt;integer&gt;            &lt;character&gt; &lt;character&gt;
+       [1]        NA      &lt;NA&gt;        Glyma.01G000100    30544134
+       [2]        NA      &lt;NA&gt;      Glyma.01G000100.1        &lt;NA&gt;
+       [3]        NA      &lt;NA&gt; Glyma.01G000100.1:ex..        &lt;NA&gt;
+       [4]        NA      &lt;NA&gt; Glyma.01G000100.1:th..        &lt;NA&gt;
+       [5]        NA         1  Glyma.01G000100.1:CDS        &lt;NA&gt;
+       ...       ...       ...                    ...         ...
+  [791301]        NA         1    Glyma.U045500.1:CDS        &lt;NA&gt;
+  [791302]        NA      &lt;NA&gt; Glyma.U045500.1:exon:5        &lt;NA&gt;
+  [791303]        NA         2    Glyma.U045500.1:CDS        &lt;NA&gt;
+  [791304]        NA      &lt;NA&gt; Glyma.U045500.1:exon:6        &lt;NA&gt;
+  [791305]        NA         0    Glyma.U045500.1:CDS        &lt;NA&gt;
+                           pid                     id         alias
+                   &lt;character&gt;            &lt;character&gt;   &lt;character&gt;
+       [1] Glyma.01G000100.1.p Glyma.01G000100.Wm82.. Glyma01g00210
+       [2]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+       [3]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+       [4]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+       [5]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+       ...                 ...                    ...           ...
+  [791301]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+  [791302]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+  [791303]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+  [791304]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+  [791305]                &lt;NA&gt;                   &lt;NA&gt;          &lt;NA&gt;
+                              tid        old_id            Name         gene_id
+                      &lt;character&gt;   &lt;character&gt;     &lt;character&gt;     &lt;character&gt;
+       [1] Glyma.01G000100.1.Wm.. Glyma01g00210 Glyma.01G000100 Glyma.01G000100
+       [2]                   &lt;NA&gt;          &lt;NA&gt; Glyma.01G000100 Glyma.01G000100
+       [3]                   &lt;NA&gt;          &lt;NA&gt; Glyma.01G000100 Glyma.01G000100
+       [4]                   &lt;NA&gt;          &lt;NA&gt; Glyma.01G000100 Glyma.01G000100
+       [5]                   &lt;NA&gt;          &lt;NA&gt; Glyma.01G000100 Glyma.01G000100
+       ...                    ...           ...             ...             ...
+  [791301]                   &lt;NA&gt;          &lt;NA&gt;   Glyma.U045500   Glyma.U045500
+  [791302]                   &lt;NA&gt;          &lt;NA&gt;   Glyma.U045500   Glyma.U045500
+  [791303]                   &lt;NA&gt;          &lt;NA&gt;   Glyma.U045500   Glyma.U045500
+  [791304]                   &lt;NA&gt;          &lt;NA&gt;   Glyma.U045500   Glyma.U045500
+  [791305]                   &lt;NA&gt;          &lt;NA&gt;   Glyma.U045500   Glyma.U045500
+                      Parent     old_tid       UniProtKB
+             &lt;CharacterList&gt; &lt;character&gt; &lt;CharacterList&gt;
+       [1]                          &lt;NA&gt;                
+       [2]   Glyma.01G000100        &lt;NA&gt;                
+       [3] Glyma.01G000100.1        &lt;NA&gt;                
+       [4] Glyma.01G000100.1        &lt;NA&gt;                
+       [5] Glyma.01G000100.1        &lt;NA&gt;                
+       ...               ...         ...             ...
+  [791301]   Glyma.U045500.1        &lt;NA&gt;                
+  [791302]   Glyma.U045500.1        &lt;NA&gt;                
+  [791303]   Glyma.U045500.1        &lt;NA&gt;                
+  [791304]   Glyma.U045500.1        &lt;NA&gt;                
+  [791305]   Glyma.U045500.1        &lt;NA&gt;                
+  -------
+  seqinfo: 147 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+</div>
+<p>The first three columns of a <code>GRanges</code> object are mandatory, and they indicate the chromosome name, the ranges (i.e., start and end positions of a particular genomic element), and the strand where the element is. All other columns are called <em>annotations</em>, and they are optional. To demonstrate how to interpret <code>GRanges</code> object, let’s take a closer look at the first element.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Subset the first element of the `GRanges` object</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>gma_ranges[<span class="dv">1</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 1 range and 16 metadata columns:
+      seqnames      ranges strand |         source     type     score     phase
+         &lt;Rle&gt;   &lt;IRanges&gt;  &lt;Rle&gt; |       &lt;factor&gt; &lt;factor&gt; &lt;numeric&gt; &lt;integer&gt;
+  [1]    Chr01 27355-28320      - | JGI Wm82.a2.v1     gene        NA      &lt;NA&gt;
+                   ID       pacid                 pid                     id
+          &lt;character&gt; &lt;character&gt;         &lt;character&gt;            &lt;character&gt;
+  [1] Glyma.01G000100    30544134 Glyma.01G000100.1.p Glyma.01G000100.Wm82..
+              alias                    tid        old_id            Name
+        &lt;character&gt;            &lt;character&gt;   &lt;character&gt;     &lt;character&gt;
+  [1] Glyma01g00210 Glyma.01G000100.1.Wm.. Glyma01g00210 Glyma.01G000100
+              gene_id          Parent     old_tid       UniProtKB
+          &lt;character&gt; &lt;CharacterList&gt; &lt;character&gt; &lt;CharacterList&gt;
+  [1] Glyma.01G000100                        &lt;NA&gt;                
+  -------
+  seqinfo: 147 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+</div>
+<p>By looking at the first element, we can see that it represents a gene located in chromosome Chr01, from position 27355 to position 28320, and with ID <code>gma_ranges$gene_id[1]</code>.</p>
+<p>Importantly, to extract data for the first 3 variables, you will use the special functions <code>seqnames()</code>, <code>ranges()</code> (or <code>start()</code> and <code>end()</code>), and <code>strand()</code>. However, extracting information on the range annotations can be done with the <code>$</code> operator, as you would do for a data frame. You can also use the function <code>mcols()</code> to extract only range annotations.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract seqnames (chromosome names)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">seqnames</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>factor-Rle of length 6 with 1 run
+  Lengths:     6
+  Values : Chr01
+Levels(147): Chr01 Chr02 Chr03 Chr04 ... scaffold_93 scaffold_97 scaffold_99</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract start and end positions</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Option 1: ranges()</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">ranges</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>IRanges object with 6 ranges and 0 metadata columns:
+          start       end     width
+      &lt;integer&gt; &lt;integer&gt; &lt;integer&gt;
+  [1]     27355     28320       966
+  [2]     27355     28320       966
+  [3]     27355     27824       470
+  [4]     27355     27655       301
+  [5]     27656     27824       169
+  [6]     27926     27991        66</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Option 2: start() and end()</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">start</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 27355 27355 27355 27355 27656 27926</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">end</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 28320 28320 27824 27655 27824 27991</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract all range annotations</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">mcols</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>DataFrame with 6 rows and 16 columns
+          source            type     score     phase                     ID
+        &lt;factor&gt;        &lt;factor&gt; &lt;numeric&gt; &lt;integer&gt;            &lt;character&gt;
+1 JGI Wm82.a2.v1 gene                   NA        NA        Glyma.01G000100
+2 JGI Wm82.a2.v1 mRNA                   NA        NA      Glyma.01G000100.1
+3 JGI Wm82.a2.v1 exon                   NA        NA Glyma.01G000100.1:ex..
+4 JGI Wm82.a2.v1 three_prime_UTR        NA        NA Glyma.01G000100.1:th..
+5 JGI Wm82.a2.v1 CDS                    NA         1  Glyma.01G000100.1:CDS
+6 JGI Wm82.a2.v1 exon                   NA        NA Glyma.01G000100.1:ex..
+        pacid                 pid                     id         alias
+  &lt;character&gt;         &lt;character&gt;            &lt;character&gt;   &lt;character&gt;
+1    30544134 Glyma.01G000100.1.p Glyma.01G000100.Wm82.. Glyma01g00210
+2          NA                  NA                     NA            NA
+3          NA                  NA                     NA            NA
+4          NA                  NA                     NA            NA
+5          NA                  NA                     NA            NA
+6          NA                  NA                     NA            NA
+                     tid        old_id            Name         gene_id
+             &lt;character&gt;   &lt;character&gt;     &lt;character&gt;     &lt;character&gt;
+1 Glyma.01G000100.1.Wm.. Glyma01g00210 Glyma.01G000100 Glyma.01G000100
+2                     NA            NA Glyma.01G000100 Glyma.01G000100
+3                     NA            NA Glyma.01G000100 Glyma.01G000100
+4                     NA            NA Glyma.01G000100 Glyma.01G000100
+5                     NA            NA Glyma.01G000100 Glyma.01G000100
+6                     NA            NA Glyma.01G000100 Glyma.01G000100
+             Parent     old_tid       UniProtKB
+    &lt;CharacterList&gt; &lt;character&gt; &lt;CharacterList&gt;
+1                            NA                
+2   Glyma.01G000100          NA                
+3 Glyma.01G000100.1          NA                
+4 Glyma.01G000100.1          NA                
+5 Glyma.01G000100.1          NA                
+6 Glyma.01G000100.1          NA                </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract a specific column</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(gma_ranges<span class="sc">$</span>type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] gene            mRNA            exon            three_prime_UTR
+[5] CDS             exon           
+Levels: gene mRNA exon three_prime_UTR CDS five_prime_UTR</code></pre>
+</div>
+</div>
+<p>Finally, you can subset <code>GRanges</code> object using the same syntax to subset vectors. For example, to extract only ranges for genes, you’d do:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract only gene ranges</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>gene_ranges <span class="ot">&lt;-</span> gma_ranges[gma_ranges<span class="sc">$</span>type <span class="sc">==</span> <span class="st">"gene"</span>]</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>gene_ranges</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 56044 ranges and 16 metadata columns:
+             seqnames      ranges strand |         source     type     score
+                &lt;Rle&gt;   &lt;IRanges&gt;  &lt;Rle&gt; |       &lt;factor&gt; &lt;factor&gt; &lt;numeric&gt;
+      [1]       Chr01 27355-28320      - | JGI Wm82.a2.v1     gene        NA
+      [2]       Chr01 58975-67527      - | JGI Wm82.a2.v1     gene        NA
+      [3]       Chr01 67770-69968      + | JGI Wm82.a2.v1     gene        NA
+      [4]       Chr01 90289-91197      + | JGI Wm82.a2.v1     gene        NA
+      [5]       Chr01 90152-95947      - | JGI Wm82.a2.v1     gene        NA
+      ...         ...         ...    ... .            ...      ...       ...
+  [56040] scaffold_97 38235-38465      - | JGI Wm82.a2.v1     gene        NA
+  [56041] scaffold_97 58787-59891      + | JGI Wm82.a2.v1     gene        NA
+  [56042] scaffold_99 13436-13814      + | JGI Wm82.a2.v1     gene        NA
+  [56043] scaffold_99 22294-25413      - | JGI Wm82.a2.v1     gene        NA
+  [56044] scaffold_99 25903-29105      - | JGI Wm82.a2.v1     gene        NA
+              phase              ID       pacid                 pid
+          &lt;integer&gt;     &lt;character&gt; &lt;character&gt;         &lt;character&gt;
+      [1]      &lt;NA&gt; Glyma.01G000100    30544134 Glyma.01G000100.1.p
+      [2]      &lt;NA&gt; Glyma.01G000200    30543475 Glyma.01G000200.1.p
+      [3]      &lt;NA&gt; Glyma.01G000300    30545121 Glyma.01G000300.1.p
+      [4]      &lt;NA&gt; Glyma.01G000500    30543768 Glyma.01G000500.1.p
+      [5]      &lt;NA&gt; Glyma.01G000400    30542514 Glyma.01G000400.1.p
+      ...       ...             ...         ...                 ...
+  [56040]      &lt;NA&gt;   Glyma.U045100    30487127   Glyma.U045100.1.p
+  [56041]      &lt;NA&gt;   Glyma.U045200    30487126   Glyma.U045200.1.p
+  [56042]      &lt;NA&gt;   Glyma.U045300    30523589   Glyma.U045300.1.p
+  [56043]      &lt;NA&gt;   Glyma.U045400    30523588   Glyma.U045400.1.p
+  [56044]      &lt;NA&gt;   Glyma.U045500    30523590   Glyma.U045500.1.p
+                              id           alias                    tid
+                     &lt;character&gt;     &lt;character&gt;            &lt;character&gt;
+      [1] Glyma.01G000100.Wm82..   Glyma01g00210 Glyma.01G000100.1.Wm..
+      [2] Glyma.01G000200.Wm82..            &lt;NA&gt; Glyma.01G000200.1.Wm..
+      [3] Glyma.01G000300.Wm82..            &lt;NA&gt; Glyma.01G000300.1.Wm..
+      [4] Glyma.01G000500.Wm82..            &lt;NA&gt; Glyma.01G000500.1.Wm..
+      [5] Glyma.01G000400.Wm82..   Glyma01g00300 Glyma.01G000400.1.Wm..
+      ...                    ...             ...                    ...
+  [56040] Glyma.U045100.Wm82.a..            &lt;NA&gt; Glyma.U045100.1.Wm82..
+  [56041] Glyma.U045200.Wm82.a.. Glyma0101s00210 Glyma.U045200.1.Wm82..
+  [56042] Glyma.U045300.Wm82.a..            &lt;NA&gt; Glyma.U045300.1.Wm82..
+  [56043] Glyma.U045400.Wm82.a..            &lt;NA&gt; Glyma.U045400.1.Wm82..
+  [56044] Glyma.U045500.Wm82.a..            &lt;NA&gt; Glyma.U045500.1.Wm82..
+                   old_id            Name         gene_id          Parent
+              &lt;character&gt;     &lt;character&gt;     &lt;character&gt; &lt;CharacterList&gt;
+      [1]   Glyma01g00210 Glyma.01G000100 Glyma.01G000100                
+      [2]            &lt;NA&gt; Glyma.01G000200 Glyma.01G000200                
+      [3]            &lt;NA&gt; Glyma.01G000300 Glyma.01G000300                
+      [4]            &lt;NA&gt; Glyma.01G000500 Glyma.01G000500                
+      [5]   Glyma01g00300 Glyma.01G000400 Glyma.01G000400                
+      ...             ...             ...             ...             ...
+  [56040]            &lt;NA&gt;   Glyma.U045100   Glyma.U045100                
+  [56041] Glyma0101s00210   Glyma.U045200   Glyma.U045200                
+  [56042]            &lt;NA&gt;   Glyma.U045300   Glyma.U045300                
+  [56043]            &lt;NA&gt;   Glyma.U045400   Glyma.U045400                
+  [56044]            &lt;NA&gt;   Glyma.U045500   Glyma.U045500                
+                    old_tid       UniProtKB
+                &lt;character&gt; &lt;CharacterList&gt;
+      [1]              &lt;NA&gt;                
+      [2]              &lt;NA&gt;                
+      [3]              &lt;NA&gt;                
+      [4]              &lt;NA&gt;                
+      [5]   Glyma01g00300.1                
+      ...               ...             ...
+  [56040]              &lt;NA&gt;                
+  [56041] Glyma0101s00210.2                
+  [56042]              &lt;NA&gt;                
+  [56043]              &lt;NA&gt;                
+  [56044]              &lt;NA&gt;                
+  -------
+  seqinfo: 147 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Explore the <code>GRanges</code> object created from the GFF3 file to answer the following questions:</p>
+<ol type="1">
+<li>How many ranges represent genes and CDS, respectively?</li>
+<li>How many chromosomes are there?</li>
+<li>Which chromosome has the greatest number of genes?</li>
+<li>What is the mean number of genes per chromosome?</li>
+</ol>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-1" class="callout-1-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(gma_ranges<span class="sc">$</span>type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+           gene            mRNA            exon three_prime_UTR             CDS 
+          56044           56044          297976           47192          282673 
+ five_prime_UTR 
+          51376 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">seqnames</span>(gma_ranges))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+        Chr01         Chr02         Chr03         Chr04         Chr05 
+        33819         43741         37220         37473         35487 
+        Chr06         Chr07         Chr08         Chr09         Chr10 
+        46297         39226         53789         40095         42785 
+        Chr11         Chr12         Chr13         Chr14         Chr15 
+        37556         33944         54585         31155         38793 
+        Chr16         Chr17         Chr18         Chr19         Chr20 
+        29694         37989         39914         36761         35482 
+scaffold_1038  scaffold_105 scaffold_1057 scaffold_1065 scaffold_1078 
+            7            68            10             6             4 
+ scaffold_110  scaffold_111 scaffold_1118  scaffold_112 scaffold_1160 
+           13            24            24             6             4 
+scaffold_1179  scaffold_118  scaffold_119 scaffold_1196 scaffold_1219 
+            8            28            12             4            12 
+ scaffold_123 scaffold_1233 scaffold_1241 scaffold_1271  scaffold_128 
+           86            10            16             4            34 
+scaffold_1317 scaffold_1321 scaffold_1327  scaffold_137 scaffold_1379 
+           14             4            10            32             4 
+ scaffold_138  scaffold_139 scaffold_1394 scaffold_1402  scaffold_151 
+           16            26             6            25             4 
+ scaffold_152 scaffold_1560  scaffold_157  scaffold_164  scaffold_165 
+            8             6             8            46            11 
+ scaffold_168 scaffold_1718 scaffold_1729 scaffold_1742 scaffold_1745 
+           16             9             9            15             4 
+scaffold_1777 scaffold_1793  scaffold_186  scaffold_191  scaffold_195 
+            6            18            10            64            38 
+scaffold_1967  scaffold_197 scaffold_1990  scaffold_205  scaffold_208 
+           10            38            10             8            10 
+scaffold_2080   scaffold_21  scaffold_211  scaffold_212 scaffold_2140 
+           12          1768            10            17             8 
+ scaffold_216  scaffold_217   scaffold_22  scaffold_223  scaffold_229 
+           30            24           233            12            16 
+  scaffold_23   scaffold_24   scaffold_25  scaffold_254  scaffold_263 
+          189            16            49            10            10 
+ scaffold_265   scaffold_27  scaffold_271   scaffold_28  scaffold_296 
+           18           158            22           431             4 
+  scaffold_30   scaffold_31  scaffold_311   scaffold_32  scaffold_330 
+           16           138             8           368            20 
+ scaffold_344  scaffold_345  scaffold_349  scaffold_353   scaffold_36 
+           39            10            32             8            16 
+ scaffold_361  scaffold_376  scaffold_383   scaffold_40  scaffold_409 
+           14            20             8            32             8 
+  scaffold_41  scaffold_412  scaffold_426   scaffold_44  scaffold_442 
+            8            12             7           203            17 
+ scaffold_471  scaffold_484  scaffold_488  scaffold_521  scaffold_522 
+           26            10            14             4             4 
+ scaffold_530  scaffold_581  scaffold_587  scaffold_608  scaffold_614 
+            6            18            23            22            14 
+ scaffold_623  scaffold_633  scaffold_636   scaffold_65  scaffold_660 
+            4             8            14            21            16 
+ scaffold_675  scaffold_681  scaffold_691  scaffold_711  scaffold_713 
+           12            10            17            22             6 
+  scaffold_72   scaffold_73   scaffold_74  scaffold_744   scaffold_75 
+            8            18            22             8            12 
+  scaffold_76   scaffold_78  scaffold_821  scaffold_843  scaffold_846 
+           19            38            16            10             7 
+ scaffold_852   scaffold_88  scaffold_896   scaffold_91   scaffold_93 
+            6             8             8            24            73 
+  scaffold_97   scaffold_99 
+           32            34 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q3</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sort</span>(<span class="fu">table</span>(<span class="fu">seqnames</span>(gma_ranges)), <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+        Chr13         Chr08         Chr06         Chr02         Chr10 
+        54585         53789         46297         43741         42785 
+        Chr09         Chr18         Chr07         Chr15         Chr17 
+        40095         39914         39226         38793         37989 
+        Chr11         Chr04         Chr03         Chr19         Chr05 
+        37556         37473         37220         36761         35487 
+        Chr20         Chr12         Chr01         Chr14         Chr16 
+        35482         33944         33819         31155         29694 
+  scaffold_21   scaffold_28   scaffold_32   scaffold_22   scaffold_44 
+         1768           431           368           233           203 
+  scaffold_23   scaffold_27   scaffold_31  scaffold_123   scaffold_93 
+          189           158           138            86            73 
+ scaffold_105  scaffold_191   scaffold_25  scaffold_164  scaffold_344 
+           68            64            49            46            39 
+ scaffold_195  scaffold_197   scaffold_78  scaffold_128   scaffold_99 
+           38            38            38            34            34 
+ scaffold_137  scaffold_349   scaffold_40   scaffold_97  scaffold_216 
+           32            32            32            32            30 
+ scaffold_118  scaffold_139  scaffold_471 scaffold_1402  scaffold_111 
+           28            26            26            25            24 
+scaffold_1118  scaffold_217   scaffold_91  scaffold_587  scaffold_271 
+           24            24            24            23            22 
+ scaffold_608  scaffold_711   scaffold_74   scaffold_65  scaffold_330 
+           22            22            22            21            20 
+ scaffold_376   scaffold_76 scaffold_1793  scaffold_265  scaffold_581 
+           20            19            18            18            18 
+  scaffold_73  scaffold_212  scaffold_442  scaffold_691 scaffold_1241 
+           18            17            17            17            16 
+ scaffold_138  scaffold_168  scaffold_229   scaffold_24   scaffold_30 
+           16            16            16            16            16 
+  scaffold_36  scaffold_660  scaffold_821 scaffold_1742 scaffold_1317 
+           16            16            16            15            14 
+ scaffold_361  scaffold_488  scaffold_614  scaffold_636  scaffold_110 
+           14            14            14            14            13 
+ scaffold_119 scaffold_1219 scaffold_2080  scaffold_223  scaffold_412 
+           12            12            12            12            12 
+ scaffold_675   scaffold_75  scaffold_165 scaffold_1057 scaffold_1233 
+           12            12            11            10            10 
+scaffold_1327  scaffold_186 scaffold_1967 scaffold_1990  scaffold_208 
+           10            10            10            10            10 
+ scaffold_211  scaffold_254  scaffold_263  scaffold_345  scaffold_484 
+           10            10            10            10            10 
+ scaffold_681  scaffold_843 scaffold_1718 scaffold_1729 scaffold_1179 
+           10            10             9             9             8 
+ scaffold_152  scaffold_157  scaffold_205 scaffold_2140  scaffold_311 
+            8             8             8             8             8 
+ scaffold_353  scaffold_383  scaffold_409   scaffold_41  scaffold_633 
+            8             8             8             8             8 
+  scaffold_72  scaffold_744   scaffold_88  scaffold_896 scaffold_1038 
+            8             8             8             8             7 
+ scaffold_426  scaffold_846 scaffold_1065  scaffold_112 scaffold_1394 
+            7             7             6             6             6 
+scaffold_1560 scaffold_1777  scaffold_530  scaffold_713  scaffold_852 
+            6             6             6             6             6 
+scaffold_1078 scaffold_1160 scaffold_1196 scaffold_1271 scaffold_1321 
+            4             4             4             4             4 
+scaffold_1379  scaffold_151 scaffold_1745  scaffold_296  scaffold_521 
+            4             4             4             4             4 
+ scaffold_522  scaffold_623 
+            4             4 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q4</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(<span class="fu">table</span>(<span class="fu">seqnames</span>(gma_ranges)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 5383.027</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<p>Finally, let’s load our trait-related SNPs. Since we have SNPs associated with resistance to multiple pathogens, the SNP positions are stored in a <code>GRangesList</code> object, which is simply a list of independent <code>GRanges</code> objects.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load object with genomic coordinates of trait-related SNPs</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"snps_soyfungi.rda"</span>))</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspecting the object</span></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>snps_soyfungi</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRangesList object of length 5:
+$Cgregata
+GRanges object with 9 ranges and 4 metadata columns:
+      seqnames    ranges strand |    Organism       Trait         SNP
+         &lt;Rle&gt; &lt;IRanges&gt;  &lt;Rle&gt; | &lt;character&gt; &lt;character&gt; &lt;character&gt;
+  [1]    Chr02   4260493      * |    Cgregata         BSR ss715582351
+  [2]    Chr04  10664085      * |    Cgregata         BSR ss715587043
+  [3]    Chr16  32796708      * |    Cgregata         BSR ss715624549
+  [4]    Chr16  32838190      * |    Cgregata         BSR ss715624557
+  [5]    Chr16  32840492      * |    Cgregata         BSR ss715624558
+  [6]    Chr16  33018083      * |    Cgregata         BSR ss715624573
+  [7]    Chr16  33018083      * |    Cgregata         BSR ss715624573
+  [8]    Chr16  33119116      * |    Cgregata         BSR ss715624583
+  [9]    Chr17  37284864      * |    Cgregata         BSR ss715627222
+                         DOI
+                 &lt;character&gt;
+  [1] 10.3835/plantgenome2..
+  [2] 10.1094/PHYTO-01-16-..
+  [3] 10.3835/plantgenome2..
+  [4] 10.3835/plantgenome2..
+  [5] 10.3835/plantgenome2..
+  [6] 10.3835/plantgenome2..
+  [7] 10.1094/PHYTO-01-16-..
+  [8] 10.3835/plantgenome2..
+  [9] 10.3835/plantgenome2..
+  -------
+  seqinfo: 20 sequences from an unspecified genome; no seqlengths
+
+...
+&lt;4 more elements&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(snps_soyfungi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Cgregata"      "Fgraminearum"  "Fvirguliforme" "Mphaseolina"  
+[5] "Ppachyrhizi"  </code></pre>
+</div>
+</div>
+<p>Each element of this <code>GRangesList</code> contains the genomic coordinates of SNPs in the soybean genome that are associated with resistance to a particular pathogenic fungus, namely <em>Cadophora gregata</em>, <em>Fusarium graminearum</em>, <em>Fusarium virguliforme</em>, <em>Macrophomina phaseolina</em>, and <em>Phakopsora pachyrhizi</em>.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li>Explore the <code>GRangesList</code> object with trait-related SNPs and answer the questions below:</li>
+</ol>
+<ul>
+<li>How many resistance-related SNPs are there against each pathogen?</li>
+<li>How many soybean chromosomes have SNPs associated with resistance to <em>Cadophora gregata</em>?</li>
+</ul>
+<div class="callout callout-style-simple callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">lengths</span>(snps_soyfungi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Cgregata  Fgraminearum Fvirguliforme   Mphaseolina   Ppachyrhizi 
+            9            12            68            16             2 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(<span class="fu">seqnames</span>(snps_soyfungi<span class="sc">$</span>Cgregata)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="exploratory-data-analyses" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="exploratory-data-analyses"><span class="header-section-number">3.2</span> Exploratory data analyses</h2>
+<p>Before proceeding to the candidate gene mining, it is important to explore where in the genome our trait-related SNPs are. You can do that with two functions from <em><a href="https://bioconductor.org/packages/3.17/cageminer">cageminer</a></em>:</p>
+<ul>
+<li><code>plot_snp_distribution()</code>: create a barplot with the number of SNPs in each chromosome.</li>
+<li><code>plot_snp_circos</code>: create a Circos plot with the position of each SNP across chromosomes.</li>
+</ul>
+<p>The functions described above work both with <code>GRanges</code> and <code>GRangesList</code> objects. For example:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Barplot of SNP counts per chromosome</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="do">## A single set of SNPs</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_snp_distribution</span>(snps_soyfungi<span class="sc">$</span>Cgregata)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="03_network-based_data_integration_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Multiple sets of SNPs</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_snp_distribution</span>(snps_soyfungi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="03_network-based_data_integration_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>For <code>plot_snp_circos()</code>, however, you will also need to input a <code>GRanges</code> object with chromosome lengths, so that the function knows where each chromosome starts and ends. This information is already present in a pre-built object named <code>gma_chrlen</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load object containing chromosome lengths</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gma_chrlen.rda"</span>))</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>gma_chrlen</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>GRanges object with 20 ranges and 0 metadata columns:
+       seqnames     ranges strand
+          &lt;Rle&gt;  &lt;IRanges&gt;  &lt;Rle&gt;
+   [1]    Chr01 1-56831624      *
+   [2]    Chr02 1-48577505      *
+   [3]    Chr03 1-45779781      *
+   [4]    Chr04 1-52389146      *
+   [5]    Chr05 1-42234498      *
+   ...      ...        ...    ...
+  [16]    Chr16 1-37887014      *
+  [17]    Chr17 1-41641366      *
+  [18]    Chr18 1-58018742      *
+  [19]    Chr19 1-50746916      *
+  [20]    Chr20 1-47904181      *
+  -------
+  seqinfo: 20 sequences from an unspecified genome; no seqlengths</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Keep only ranges for genes in chromosomes (i.e., discard scaffolds)</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>chromosome_names <span class="ot">&lt;-</span> <span class="fu">seqlevels</span>(gene_ranges)[<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>]</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>gene_ranges <span class="ot">&lt;-</span> <span class="fu">keepSeqlevels</span>(gene_ranges, chromosome_names, <span class="at">pruning.mode =</span> <span class="st">"tidy"</span>)</span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Circos plot with SNP positions across chromosomes</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="do">## A single set of SNPs</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_snp_circos</span>(</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">genome_ranges =</span> gma_chrlen, </span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene_ranges =</span> gene_ranges, </span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">marker_ranges =</span> snps_soyfungi<span class="sc">$</span>Cgregata</span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="03_network-based_data_integration_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Multiple sets of SNPs</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_snp_circos</span>(gma_chrlen, gene_ranges, snps_soyfungi)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="03_network-based_data_integration_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="mining-high-confidence-candidate-genes" class="level2 page-columns page-full" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="mining-high-confidence-candidate-genes"><span class="header-section-number">3.3</span> Mining high-confidence candidate genes</h2>
+<p>To prioritize candidate genes, <em><a href="https://bioconductor.org/packages/3.17/cageminer">cageminer</a></em> uses a 3-step workflow as illustrated below:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="cageminer_workflow.jpeg" class="img-fluid figure-img"></p>
+<figcaption class="figure-caption">Candidate gene prioritization workflow with cageminer</figcaption>
+</figure>
+</div>
+<p>Importantly, while it is recommended to follow all 3 steps, they can be executed independently, so one can use only one or a few steps. For instance, if you don’t have GWAS-derived SNPs, but you have a list of reference genes that you know are involved in a trait of interest, you could execute only steps 2 and 3 to find potential candidate genes.</p>
+<p>Because of such independence between steps, the candidate gene mining workflow can be executed in two ways: with separate functions (<code>mine_step1()</code>, <code>mine_step2()</code>, and <code>mine_step3()</code>), or with a single function (<code>mine_candidates()</code>) that automatically executes the separate functions one after another. Both ways are described below. First, let’s prepare required data:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load GCN and data frame of guides</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gcn_soyfungi.rda"</span>))</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"guides_soyfungi.rda"</span>))</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Conditions in which we expected expression to change</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>conditions <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"Fgraminearum_"</span>, <span class="fu">c</span>(<span class="st">"stress_PI567301B"</span>, <span class="st">"stress_wyandot"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="column-page">
+<div class="columns">
+<div class="column" style="width:45%;">
+<p><strong>Step-by-step candidate gene mining</strong></p>
+<p>Example: mining genes associated with resistance to <em>Fusarium graminearum</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: finding genes close to SNPs</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>candidates1 <span class="ot">&lt;-</span> <span class="fu">mine_step1</span>(</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene_ranges =</span> gene_ranges, </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">marker_ranges =</span> snps_soyfungi<span class="sc">$</span>Fgraminearum</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: finding coexpression modules enriched in guide genes</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>candidates2 <span class="ot">&lt;-</span> <span class="fu">mine_step2</span>(</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> se_soyfungi,</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">gcn =</span> gcn_soyfungi,</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">guides =</span> guides_soyfungi<span class="sc">$</span>Gene,</span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">candidates =</span> candidates1<span class="sc">$</span>gene_id</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: finding genes with altered expression in a condition of interest</span></span>
+<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a>candidates3 <span class="ot">&lt;-</span> <span class="fu">mine_step3</span>(</span>
+<span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> se_soyfungi,</span>
+<span id="cb47-18"><a href="#cb47-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">candidates =</span> candidates2<span class="sc">$</span>candidates,</span>
+<span id="cb47-19"><a href="#cb47-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Pathogen_Treatment"</span>,</span>
+<span id="cb47-20"><a href="#cb47-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">sample_group =</span> conditions</span>
+<span id="cb47-21"><a href="#cb47-21" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div><div class="column" style="width:3%;">
+
+</div><div class="column" style="width:45%;">
+<p><strong>One-step candidate gene mining</strong></p>
+<p>Example: mining genes associated with resistance to <em>Fusarium graminearum</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Single-step candidate mining with `mine_candidates()`</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>candidates <span class="ot">&lt;-</span> <span class="fu">mine_candidates</span>(</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene_ranges =</span> gene_ranges, </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">marker_ranges =</span> snps_soyfungi<span class="sc">$</span>Fgraminearum, </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> se_soyfungi,</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">gcn =</span> gcn_soyfungi, </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">guides =</span> guides_soyfungi<span class="sc">$</span>Gene,</span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Pathogen_Treatment"</span>,</span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">sample_group =</span> conditions</span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+<p>Because <code>mine_candidates()</code> is basically a wrapper that runs <code>mine_step1()</code>, <code>mine_step2()</code>, and <code>mine_step3()</code> one after another, the results obtained with the one-step and the step-by-step mining are the same.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><p>Verify that results obtained with the one-step and with the step-by-step mining are the same.</p></li>
+<li><p>Repeat the candidate mining with <code>mine_candidates()</code>, but now look for high-confidence candidates against <em>Fusarium virguliforme</em>. Use the following vector as <code>sample_group</code>:</p></li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>fvir_conditions <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Fvirguliforme_"</span>,</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"stress_0dpi"</span>, <span class="st">"stress_10-24days"</span>, <span class="st">"stress_10dpi"</span>, <span class="st">"stress_14dpi"</span>,</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"stress_2dpi"</span>, <span class="st">"stress_3-5days"</span>, <span class="st">"stress_4dpi"</span>, <span class="st">"stress_7dpi"</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>How many high-confidence candidate genes are there?</p>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>c1 <span class="ot">&lt;-</span> <span class="fu">unique</span>(candidates3<span class="sc">$</span>gene)</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>c2 <span class="ot">&lt;-</span> <span class="fu">unique</span>(candidates<span class="sc">$</span>gene)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="fu">identical</span>(c1, c2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>fvir_conditions <span class="ot">&lt;-</span> <span class="fu">paste0</span>(</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Fvirguliforme_"</span>,</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"stress_0dpi"</span>, <span class="st">"stress_10-24days"</span>, <span class="st">"stress_10dpi"</span>, <span class="st">"stress_14dpi"</span>,</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>        <span class="st">"stress_2dpi"</span>, <span class="st">"stress_3-5days"</span>, <span class="st">"stress_4dpi"</span>, <span class="st">"stress_7dpi"</span></span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>candidates_fvir <span class="ot">&lt;-</span> <span class="fu">mine_candidates</span>(</span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">gene_ranges =</span> gene_ranges, </span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">marker_ranges =</span> snps_soyfungi<span class="sc">$</span>Fgraminearum, </span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">exp =</span> se_soyfungi,</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">gcn =</span> gcn_soyfungi, </span>
+<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">guides =</span> guides_soyfungi<span class="sc">$</span>Gene,</span>
+<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">metadata_cols =</span> <span class="st">"Pathogen_Treatment"</span>,</span>
+<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">sample_group =</span> fvir_conditions</span>
+<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="scoring-prioritized-candidate-genes" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="scoring-prioritized-candidate-genes"><span class="header-section-number">3.4</span> Scoring prioritized candidate genes</h2>
+<p>Once you’ve prioritized candidate genes with <code>mine_candidates()</code>, you might be interested in scoring genes so they can be ranked. This can be performed with the function <code>score_genes()</code>, which uses the following formulae:</p>
+<p><span class="math display">\[
+S_i = r_{pb} \kappa
+\]</span> where <span class="math inline">\(\kappa = 2\)</span> if the gene either a TF or a hub, <span class="math inline">\(\kappa = 3\)</span> is the gene is both a TF and a hub, and <span class="math inline">\(\kappa = 1\)</span> is the gene is neither a TF nor a hub.</p>
+<p>Let’s demonstrate how this works:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load vector of TFs</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"gma_tfs.rda"</span>))</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Get hubs</span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>hubs <span class="ot">&lt;-</span> BioNERO<span class="sc">::</span><span class="fu">get_hubs_gcn</span>(<span class="at">exp =</span> se_soyfungi, <span class="at">net =</span> gcn_soyfungi)<span class="sc">$</span>Gene</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Score candidates</span></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>scored_genes <span class="ot">&lt;-</span> <span class="fu">score_genes</span>(</span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mined_candidates =</span> candidates,</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">hubs =</span> hubs,</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">tfs =</span> gma_tfs</span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-14"><a href="#cb53-14" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(scored_genes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                gene                         trait        cor       pvalue
+6160 Glyma.10G093100 Fgraminearum_stress_PI567301B  0.3305157 0.0001475706
+8040 Glyma.17G112900 Fgraminearum_stress_PI567301B -0.2912690 0.0008927231
+2447 Glyma.05G103300 Fgraminearum_stress_PI567301B -0.2801566 0.0014221203
+5409 Glyma.07G250900   Fgraminearum_stress_wyandot  0.2780755 0.0015484780
+191  Glyma.04G008900 Fgraminearum_stress_PI567301B -0.2588389 0.0032994086
+8746 Glyma.19G126800   Fgraminearum_stress_wyandot -0.2442952 0.0056416338
+                  group      score
+6160 Pathogen_Treatment  0.6610315
+8040 Pathogen_Treatment -0.5825379
+2447 Pathogen_Treatment -0.5603132
+5409 Pathogen_Treatment  0.5561510
+191  Pathogen_Treatment -0.5176778
+8746 Pathogen_Treatment -0.4885903</code></pre>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Explore the output of <code>score_genes()</code> and answer the questions below:</p>
+<ul>
+<li>Which gene has the highest score?</li>
+<li>Which gene has the lowest score?</li>
+</ul>
+<div class="callout callout-style-simple callout-none no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Show me the solutions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q1</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>scored_genes[<span class="fu">which.max</span>(<span class="fu">abs</span>(scored_genes<span class="sc">$</span>score)), ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                gene                         trait       cor       pvalue
+6160 Glyma.10G093100 Fgraminearum_stress_PI567301B 0.3305157 0.0001475706
+                  group     score
+6160 Pathogen_Treatment 0.6610315</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Q2</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>scored_genes[<span class="fu">which.min</span>(<span class="fu">abs</span>(scored_genes<span class="sc">$</span>score)), ]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                gene                         trait        cor     pvalue
+2259 Glyma.05G063600 Fgraminearum_stress_PI567301B -0.2028942 0.02215251
+                  group      score
+2259 Pathogen_Treatment -0.4057883</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="session-information" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="session-information">Session information</h2>
+<p>This chapter was created under the following conditions:</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>─ Session info ───────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.3.0 (2023-04-21)
+ os       Ubuntu 20.04.5 LTS
+ system   x86_64, linux-gnu
+ ui       X11
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Europe/Brussels
+ date     2023-09-05
+ pandoc   3.1.1 @ /usr/lib/rstudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────
+ package              * version   date (UTC) lib source
+ abind                  1.4-5     2016-07-21 [1] CRAN (R 4.3.0)
+ annotate               1.78.0    2023-04-25 [1] Bioconductor
+ AnnotationDbi          1.62.0    2023-04-25 [1] Bioconductor
+ AnnotationFilter       1.24.0    2023-04-25 [1] Bioconductor
+ backports              1.4.1     2021-12-13 [1] CRAN (R 4.3.0)
+ base64enc              0.1-3     2015-07-28 [1] CRAN (R 4.3.0)
+ Biobase              * 2.60.0    2023-04-25 [1] Bioconductor
+ BiocFileCache          2.8.0     2023-04-25 [1] Bioconductor
+ BiocGenerics         * 0.46.0    2023-04-25 [1] Bioconductor
+ BiocIO                 1.10.0    2023-04-25 [1] Bioconductor
+ BiocManager            1.30.21.1 2023-07-18 [1] CRAN (R 4.3.0)
+ BiocParallel           1.34.0    2023-04-25 [1] Bioconductor
+ BiocStyle              2.29.1    2023-08-04 [1] Github (Bioconductor/BiocStyle@7c0e093)
+ biomaRt                2.56.0    2023-04-25 [1] Bioconductor
+ BioNERO                1.9.7     2023-08-23 [1] Bioconductor
+ Biostrings             2.68.0    2023-04-25 [1] Bioconductor
+ biovizBase             1.48.0    2023-04-25 [1] Bioconductor
+ bit                    4.0.5     2022-11-15 [1] CRAN (R 4.3.0)
+ bit64                  4.0.5     2020-08-30 [1] CRAN (R 4.3.0)
+ bitops                 1.0-7     2021-04-24 [1] CRAN (R 4.3.0)
+ blob                   1.2.4     2023-03-17 [1] CRAN (R 4.3.0)
+ BSgenome               1.68.0    2023-04-25 [1] Bioconductor
+ cachem                 1.0.8     2023-05-01 [1] CRAN (R 4.3.0)
+ cageminer            * 1.7.2     2023-08-31 [1] Bioconductor
+ checkmate              2.2.0     2023-04-27 [1] CRAN (R 4.3.0)
+ circlize               0.4.15    2022-05-10 [1] CRAN (R 4.3.0)
+ cli                    3.6.1     2023-03-23 [1] CRAN (R 4.3.0)
+ clue                   0.3-64    2023-01-31 [1] CRAN (R 4.3.0)
+ cluster                2.1.4     2022-08-22 [4] CRAN (R 4.2.1)
+ coda                   0.19-4    2020-09-30 [1] CRAN (R 4.3.0)
+ codetools              0.2-19    2023-02-01 [4] CRAN (R 4.2.2)
+ colorspace             2.1-0     2023-01-23 [1] CRAN (R 4.3.0)
+ commonmark             1.9.0     2023-03-17 [1] CRAN (R 4.3.0)
+ ComplexHeatmap         2.16.0    2023-04-25 [1] Bioconductor
+ crayon                 1.5.2     2022-09-29 [1] CRAN (R 4.3.0)
+ curl                   5.0.0     2023-01-12 [1] CRAN (R 4.3.0)
+ data.table             1.14.8    2023-02-17 [1] CRAN (R 4.3.0)
+ DBI                    1.1.3     2022-06-18 [1] CRAN (R 4.3.0)
+ dbplyr                 2.3.2     2023-03-21 [1] CRAN (R 4.3.0)
+ DelayedArray           0.26.1    2023-05-01 [1] Bioconductor
+ dichromat              2.0-0.1   2022-05-02 [1] CRAN (R 4.3.0)
+ digest                 0.6.33    2023-07-07 [1] CRAN (R 4.3.0)
+ doParallel             1.0.17    2022-02-07 [1] CRAN (R 4.3.0)
+ dplyr                  1.1.2     2023-04-20 [1] CRAN (R 4.3.0)
+ dynamicTreeCut         1.63-1    2016-03-11 [1] CRAN (R 4.3.0)
+ edgeR                  3.42.0    2023-04-25 [1] Bioconductor
+ ensembldb              2.24.0    2023-04-25 [1] Bioconductor
+ evaluate               0.21      2023-05-05 [1] CRAN (R 4.3.0)
+ fansi                  1.0.4     2023-01-22 [1] CRAN (R 4.3.0)
+ farver                 2.1.1     2022-07-06 [1] CRAN (R 4.3.0)
+ fastcluster            1.2.3     2021-05-24 [1] CRAN (R 4.3.0)
+ fastmap                1.1.1     2023-02-24 [1] CRAN (R 4.3.0)
+ filelock               1.0.2     2018-10-05 [1] CRAN (R 4.3.0)
+ foreach                1.5.2     2022-02-02 [1] CRAN (R 4.3.0)
+ foreign                0.8-82    2022-01-13 [4] CRAN (R 4.1.2)
+ Formula                1.2-5     2023-02-24 [1] CRAN (R 4.3.0)
+ genefilter             1.82.0    2023-04-25 [1] Bioconductor
+ generics               0.1.3     2022-07-05 [1] CRAN (R 4.3.0)
+ GENIE3                 1.22.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDb         * 1.36.0    2023-04-25 [1] Bioconductor
+ GenomeInfoDbData       1.2.10    2023-04-28 [1] Bioconductor
+ GenomicAlignments      1.36.0    2023-04-25 [1] Bioconductor
+ GenomicFeatures        1.52.0    2023-04-25 [1] Bioconductor
+ GenomicRanges        * 1.52.0    2023-04-25 [1] Bioconductor
+ GetoptLong             1.0.5     2020-12-15 [1] CRAN (R 4.3.0)
+ GGally                 2.1.2     2021-06-21 [1] CRAN (R 4.3.0)
+ ggbio                  1.48.0    2023-04-25 [1] Bioconductor
+ ggdendro               0.1.23    2022-02-16 [1] CRAN (R 4.3.0)
+ ggnetwork              0.5.12    2023-03-06 [1] CRAN (R 4.3.0)
+ ggplot2                3.4.1     2023-02-10 [1] CRAN (R 4.3.0)
+ ggrepel                0.9.3     2023-02-03 [1] CRAN (R 4.3.0)
+ ggtext                 0.1.2     2022-09-16 [1] CRAN (R 4.3.0)
+ GlobalOptions          0.1.2     2020-06-10 [1] CRAN (R 4.3.0)
+ glue                   1.6.2     2022-02-24 [1] CRAN (R 4.3.0)
+ GO.db                  3.17.0    2023-05-02 [1] Bioconductor
+ graph                  1.78.0    2023-04-25 [1] Bioconductor
+ gridExtra              2.3       2017-09-09 [1] CRAN (R 4.3.0)
+ gridtext               0.1.5     2022-09-16 [1] CRAN (R 4.3.0)
+ gtable                 0.3.3     2023-03-21 [1] CRAN (R 4.3.0)
+ here                 * 1.0.1     2020-12-13 [1] CRAN (R 4.3.0)
+ Hmisc                  5.0-1     2023-03-08 [1] CRAN (R 4.3.0)
+ hms                    1.1.3     2023-03-21 [1] CRAN (R 4.3.0)
+ htmlTable              2.4.1     2022-07-07 [1] CRAN (R 4.3.0)
+ htmltools              0.5.5     2023-03-23 [1] CRAN (R 4.3.0)
+ htmlwidgets            1.6.2     2023-03-17 [1] CRAN (R 4.3.0)
+ httr                   1.4.5     2023-02-24 [1] CRAN (R 4.3.0)
+ igraph                 1.4.2     2023-04-07 [1] CRAN (R 4.3.0)
+ impute                 1.74.0    2023-04-25 [1] Bioconductor
+ intergraph             2.0-2     2016-12-05 [1] CRAN (R 4.3.0)
+ IRanges              * 2.34.0    2023-04-25 [1] Bioconductor
+ iterators              1.0.14    2022-02-05 [1] CRAN (R 4.3.0)
+ jsonlite               1.8.7     2023-06-29 [1] CRAN (R 4.3.0)
+ KEGGREST               1.40.0    2023-04-25 [1] Bioconductor
+ knitr                  1.43      2023-05-25 [1] CRAN (R 4.3.0)
+ labeling               0.4.2     2020-10-20 [1] CRAN (R 4.3.0)
+ lattice                0.20-45   2021-09-22 [4] CRAN (R 4.2.0)
+ lazyeval               0.2.2     2019-03-15 [1] CRAN (R 4.3.0)
+ lifecycle              1.0.3     2022-10-07 [1] CRAN (R 4.3.0)
+ limma                  3.56.0    2023-04-25 [1] Bioconductor
+ locfit                 1.5-9.7   2023-01-02 [1] CRAN (R 4.3.0)
+ magrittr               2.0.3     2022-03-30 [1] CRAN (R 4.3.0)
+ markdown               1.6       2023-04-07 [1] CRAN (R 4.3.0)
+ MASS                   7.3-58.2  2023-01-23 [4] CRAN (R 4.2.2)
+ Matrix                 1.5-1     2022-09-13 [4] CRAN (R 4.2.1)
+ MatrixGenerics       * 1.12.2    2023-06-09 [1] Bioconductor
+ matrixStats          * 1.0.0     2023-06-02 [1] CRAN (R 4.3.0)
+ memoise                2.0.1     2021-11-26 [1] CRAN (R 4.3.0)
+ mgcv                   1.8-41    2022-10-21 [4] CRAN (R 4.2.1)
+ minet                  3.58.0    2023-04-25 [1] Bioconductor
+ munsell                0.5.0     2018-06-12 [1] CRAN (R 4.3.0)
+ NetRep                 1.2.6     2023-01-06 [1] CRAN (R 4.3.0)
+ network                1.18.1    2023-01-24 [1] CRAN (R 4.3.0)
+ nlme                   3.1-162   2023-01-31 [4] CRAN (R 4.2.2)
+ nnet                   7.3-18    2022-09-28 [4] CRAN (R 4.2.1)
+ OrganismDbi            1.42.0    2023-04-25 [1] Bioconductor
+ patchwork              1.1.2     2022-08-19 [1] CRAN (R 4.3.0)
+ pillar                 1.9.0     2023-03-22 [1] CRAN (R 4.3.0)
+ pkgconfig              2.0.3     2019-09-22 [1] CRAN (R 4.3.0)
+ plyr                   1.8.8     2022-11-11 [1] CRAN (R 4.3.0)
+ png                    0.1-8     2022-11-29 [1] CRAN (R 4.3.0)
+ preprocessCore         1.62.0    2023-04-25 [1] Bioconductor
+ prettyunits            1.1.1     2020-01-24 [1] CRAN (R 4.3.0)
+ progress               1.2.2     2019-05-16 [1] CRAN (R 4.3.0)
+ ProtGenerics           1.32.0    2023-04-25 [1] Bioconductor
+ R6                     2.5.1     2021-08-19 [1] CRAN (R 4.3.0)
+ rappdirs               0.3.3     2021-01-31 [1] CRAN (R 4.3.0)
+ RBGL                   1.76.0    2023-04-25 [1] Bioconductor
+ RColorBrewer           1.1-3     2022-04-03 [1] CRAN (R 4.3.0)
+ Rcpp                   1.0.10    2023-01-22 [1] CRAN (R 4.3.0)
+ RCurl                  1.98-1.12 2023-03-27 [1] CRAN (R 4.3.0)
+ reshape                0.8.9     2022-04-12 [1] CRAN (R 4.3.0)
+ reshape2               1.4.4     2020-04-09 [1] CRAN (R 4.3.0)
+ restfulr               0.0.15    2022-06-16 [1] CRAN (R 4.3.0)
+ RhpcBLASctl            0.23-42   2023-02-11 [1] CRAN (R 4.3.0)
+ rjson                  0.2.21    2022-01-09 [1] CRAN (R 4.3.0)
+ rlang                  1.1.1     2023-04-28 [1] CRAN (R 4.3.0)
+ rmarkdown              2.23      2023-07-01 [1] CRAN (R 4.3.0)
+ rpart                  4.1.19    2022-10-21 [4] CRAN (R 4.2.1)
+ rprojroot              2.0.3     2022-04-02 [1] CRAN (R 4.3.0)
+ Rsamtools              2.16.0    2023-04-25 [1] Bioconductor
+ RSQLite                2.3.1     2023-04-03 [1] CRAN (R 4.3.0)
+ rstudioapi             0.14      2022-08-22 [1] CRAN (R 4.3.0)
+ rtracklayer            1.60.0    2023-04-25 [1] Bioconductor
+ S4Arrays               1.0.1     2023-05-01 [1] Bioconductor
+ S4Vectors            * 0.38.0    2023-04-25 [1] Bioconductor
+ scales                 1.2.1     2022-08-20 [1] CRAN (R 4.3.0)
+ sessioninfo            1.2.2     2021-12-06 [1] CRAN (R 4.3.0)
+ shape                  1.4.6     2021-05-19 [1] CRAN (R 4.3.0)
+ statmod                1.5.0     2023-01-06 [1] CRAN (R 4.3.0)
+ statnet.common         4.8.0     2023-01-24 [1] CRAN (R 4.3.0)
+ stringi                1.7.12    2023-01-11 [1] CRAN (R 4.3.0)
+ stringr                1.5.0     2022-12-02 [1] CRAN (R 4.3.0)
+ SummarizedExperiment * 1.30.1    2023-05-01 [1] Bioconductor
+ survival               3.5-3     2023-02-12 [4] CRAN (R 4.2.2)
+ sva                    3.48.0    2023-04-25 [1] Bioconductor
+ tibble                 3.2.1     2023-03-20 [1] CRAN (R 4.3.0)
+ tidyselect             1.2.0     2022-10-10 [1] CRAN (R 4.3.0)
+ utf8                   1.2.3     2023-01-31 [1] CRAN (R 4.3.0)
+ VariantAnnotation      1.46.0    2023-04-25 [1] Bioconductor
+ vctrs                  0.6.3     2023-06-14 [1] CRAN (R 4.3.0)
+ WGCNA                  1.72-1    2023-01-18 [1] CRAN (R 4.3.0)
+ withr                  2.5.0     2022-03-03 [1] CRAN (R 4.3.0)
+ xfun                   0.39      2023-04-20 [1] CRAN (R 4.3.0)
+ XML                    3.99-0.14 2023-03-19 [1] CRAN (R 4.3.0)
+ xml2                   1.3.4     2023-04-27 [1] CRAN (R 4.3.0)
+ xtable                 1.8-4     2019-04-21 [1] CRAN (R 4.3.0)
+ XVector                0.40.0    2023-04-25 [1] Bioconductor
+ yaml                   2.3.7     2023-01-23 [1] CRAN (R 4.3.0)
+ zlibbioc               1.46.0    2023-04-25 [1] Bioconductor
+
+ [1] /home/faalm/R/x86_64-pc-linux-gnu-library/4.3
+ [2] /usr/local/lib/R/site-library
+ [3] /usr/lib/R/site-library
+ [4] /usr/lib/R/library
+
+──────────────────────────────────────────────────────────────────────────────</code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="references">References</h2>
+
+
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-almeida2021integration" class="csl-entry" role="listitem">
+Almeida-Silva, Fabricio, and Thiago M Venancio. 2021. <span>“Integration of Genome-Wide Association Studies and Gene Coexpression Networks Unveils Promising Soybean Resistance Genes Against Five Common Fungal Pathogens.”</span> <em>Scientific Reports</em> 11 (1): 24453.
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../chapters/02_network_comparison.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Dealing with multiple data sets: consensus modules and module preservation</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../chapters/04_inference_and_analysis_of_GRNs.html" class="pagination-link">
+        <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Inference and analysis of gene regulatory networks (GRNs)</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>
