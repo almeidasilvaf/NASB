@@ -1,0 +1,58 @@
+---
+execute: 
+  warning: false
+  eval: false
+---
+
+# Setup {.unnumbered}
+
+Here, I will describe everything you need to do before starting the course.
+Briefly, you will need to:
+
+1. Install R, RStudio, and required R packages.
+2. Clone the GitHub repository associated with this course.
+
+## Software and required packages
+
+To run the code in this book, you will need to install:
+
+1.  R (\>=4.2.0): go to the [CRAN website](https://cran.r-project.org/), choose your OS (Windows, Linux, or macOS), and follow the installation instructions.
+
+2.  RStudio Desktop: go to the [RStudio website](https://posit.co/download/rstudio-desktop/) and download the installer for your OS.
+
+After installing R and RStudio, you will need to install some required 
+R packages. To do that, open RStudio and execute the code below in your console:
+
+```{r}
+#| eval: false
+
+# Install BiocManager
+install.packages("BiocManager")
+
+# Use BiocManager to install required packages
+packages <- c(
+    "SummarizedExperiment",
+    "BioNERO", 
+    "cageminer",
+    "tidyverse",
+    "here"
+)
+
+BiocManager::install(packages)
+```
+
+## Course materials
+
+Throughout the course, you will use some example data sets that I created
+specifically for this course. You will also need code handouts to use
+during the live coding sessions.
+
+To get all the materials you will need to:
+
+1. Navigate to <https://github.com/almeidasilvaf/NASB>
+2. Clone the repository by clicking *Code* > *Download ZIP*
+3. Extract the *.zip* file
+4. (Optional) Move the folder with all course materials to a directory
+of your choice in your machine (you don't want to leave it 
+in *Downloads/*, right?)
+

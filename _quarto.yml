@@ -1,0 +1,30 @@
+project:
+  type: book
+
+book:
+  title: |
+    Network Analysis in Systems Biology with R/Bioconductor
+  author: 
+    - name: Fabricio Almeida-Silva
+      orcid: 0000-0002-5314-2964
+  date: "2023"
+  chapters:
+    - index.qmd
+    - chapters/00_setup.qmd
+    - chapters/01_inference_and_analysis_of_GCNs.qmd
+    - chapters/02_network_comparison.qmd
+    - chapters/03_network-based_data_integration.qmd
+    - chapters/04_inference_and_analysis_of_GRNs.qmd
+    - chapters/appendix_01_data_acquisition.qmd
+
+bibliography: chapters/bibliography.bib
+
+execute:
+  freeze: auto
+
+format:
+  html:
+    theme: cosmo
+
+editor: 
+  mode: source

@@ -1,0 +1,14 @@
+
+# Preface {.unnumbered}
+
+This book contains the materials for the course
+*Network Analysis in Systems Biology with R/Bioconductor*, which I offer
+in partnership with [Physalia courses](https://www.physalia-courses.org/).
+This is a 4-day course, and each chapter of this book contains the materials
+for one day. In details:
+
+1. Inference and analysis of gene coexpression networks (GCNs)
+2. Network comparison
+3. Network-based data integration for gene discovery
+4. Inference and analysis of gene regulatory networks (GRNs)
+

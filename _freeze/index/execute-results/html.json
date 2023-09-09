@@ -1,0 +1,16 @@
+{
+  "hash": "d4b2baa07445973ef39cb3f0a39f5a73",
+  "result": {
+    "markdown": "\n# Preface {.unnumbered}\n\nThis book contains the materials for the course\n*Network Analysis in Systems Biology with R/Bioconductor*, which I offer\nin partnership with [Physalia courses](https://www.physalia-courses.org/).\nThis is a 4-day course, and each chapter of this book contains the materials\nfor one day. In details:\n\n1. Inference and analysis of gene coexpression networks (GCNs)\n2. Network comparison\n3. Network-based data integration for gene discovery\n4. Inference and analysis of gene regulatory networks (GRNs)\n\n## Setup\n\nTo run the code in this book, you will need to install:\n\n1.  R (\\>=4.2.0): go to the [CRAN website](https://cran.r-project.org/), choose your OS (Windows, Linux, or macOS), and follow the installation instructions.\n\n2.  RStudio Desktop: go to the [RStudio website](https://posit.co/download/rstudio-desktop/) and download the installer for your OS.\n\nAfter installing R and RStudio, you will need to install some required \nR packages. To do that, open RStudio and execute the code below in your console:\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Install BiocManager\ninstall.packages(\"BiocManager\")\n\n# Use BiocManager to install required packages\npackages <- c(\n    \"treeio\", \n    \"ggtree\", \n    \"ggtree\", \n    \"ape\", \n    \"here\", \n    \"Biostrings\",\n    \"MSA2dist\", \n    \"msa\", \n    \"phangorn\", \n    \"seqinr\",\n    \"doubletrouble\",\n    \"feature\"\n)\n\nBiocManager::install(packages)\n```\n:::\n\n\nAfter that, you should have everything ready.\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

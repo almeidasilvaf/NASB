@@ -1,0 +1,20 @@
+{
+  "hash": "1219fbc298059fa2bfffaf692be64413",
+  "result": {
+    "markdown": "---\nexecute: \n  warning: false\n  eval: false\n---\n\n\n\n# Setup {.unnumbered}\n\nHere, I will describe everything you need to do before starting the course.\nBriefly, you will need to:\n\n1. Install R, RStudio, and required R packages.\n2. Clone the GitHub repository associated with this course.\n\n## Software and required packages\n\nTo run the code in this book, you will need to install:\n\n1.  R (\\>=4.2.0): go to the [CRAN website](https://cran.r-project.org/), choose your OS (Windows, Linux, or macOS), and follow the installation instructions.\n\n2.  RStudio Desktop: go to the [RStudio website](https://posit.co/download/rstudio-desktop/) and download the installer for your OS.\n\nAfter installing R and RStudio, you will need to install some required \nR packages. To do that, open RStudio and execute the code below in your console:\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Install BiocManager\ninstall.packages(\"BiocManager\")\n\n# Use BiocManager to install required packages\npackages <- c(\n    \"SummarizedExperiment\",\n    \"BioNERO\", \n    \"cageminer\",\n    \"tidyverse\",\n    \"here\"\n)\n\nBiocManager::install(packages)\n```\n:::\n\n\n\n## Course materials\n\nThroughout the course, you will use some example data sets that I created\nspecifically for this course. You will also need code handouts to use\nduring the live coding sessions.\n\nTo get all the materials you will need to:\n\n1. Navigate to <https://github.com/almeidasilvaf/NASB>\n2. Clone the repository by clicking *Code* > *Download ZIP*\n3. Extract the *.zip* file\n4. (Optional) Move the folder with all course materials to a directory\nof your choice in your machine (you don't want to leave it \nin *Downloads/*, right?)\n\n",
+    "supporting": [
+      "00_setup_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {
+      "knitr": [
+        "{\"type\":\"list\",\"attributes\":{},\"value\":[]}"
+      ]
+    },
+    "preserve": null,
+    "postProcess": false
+  }
+}

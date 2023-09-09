@@ -1,0 +1,479 @@
+---
+execute: 
+  warning: false
+---
+
+# Network-based data integration for gene discovery
+
+In this lesson, you will learn how to use networks to integrate
+data and prioritize genes associated with traits of interest. 
+At the end of the lesson, you will be able to:
+
+- work with `GRanges` objects
+- integrate GWAS-derived SNPs with coexpression networks to trait-related
+genes
+
+Let's start by loading the packages we will use.
+
+```{r}
+set.seed(123) # for reproducibility
+
+# Load required packages
+library(SummarizedExperiment)
+library(GenomicRanges)
+library(cageminer)
+library(here)
+```
+
+## Getting to know the example data
+
+In this chapter, we will use data from @almeida2021integration,
+available in the `data/` directory of the 
+[GitHub repo associated with this course](https://github.com/almeidasilvaf/NASB).
+The data set comprises:
+
+- GWAS-derived SNPs associated with soybean resistance to multiple
+phytopathogenic fungi.
+- RNA-seq data of soybean response to multiple phytopathogenic fungi.
+
+Our goal here is to prioritize candidate genes associated with resistance
+to fungal diseases.
+
+The expression data are available in a `SummarizedExperiment` object,
+which by now should be a familiar data class to you.
+
+```{r}
+# Load expression data
+load(here("data", "se_soyfungi.rda"))
+
+# Take a look at the object
+se_soyfungi
+
+colData(se_soyfungi)
+```
+
+We will also need an object containing information on the genomic coordinates
+of all genes in the soybean genome. If you have some experience with genomic
+data analyses, you probably know that this kind of information is usually
+stored in GFF3/GTF files. In Bioconductor, the standard data class to store
+genomic coordinates is called `GRanges`. You can create `GRanges` objects 
+manually or directly from GFF3/GTF files using the `import()` function from
+the `r BiocStyle::Biocpkg("rtracklayer")` package. Let's demonstrate how this
+works by reading a GFF3 file with soybean gene ranges onto a `GRanges` object:
+
+```{r}
+# Load GFF3 file into the R session as a `GRanges` object
+gma_ranges <- rtracklayer::import(
+    here("data", "gma_primary_transcripts.gff3.gz")
+)
+
+gma_ranges
+```
+
+The first three columns of a `GRanges` object are mandatory, and they 
+indicate the chromosome name, the ranges (i.e., start and end positions 
+of a particular genomic element), and the strand where the element is. 
+All other columns are called *annotations*, and they are optional.
+To demonstrate how to interpret `GRanges` object, let's take a closer look 
+at the first element.
+
+```{r}
+# Subset the first element of the `GRanges` object
+gma_ranges[1]
+```
+
+By looking at the first element, we can see that it represents 
+a `r gma_ranges$type[1]` located in chromosome 
+`r as.character(seqnames(gma_ranges[1]))`, from position
+`r start(gma_ranges[1])` to position `r end(gma_ranges[1])`, and with ID
+`gma_ranges$gene_id[1]`.
+
+
+Importantly, to extract data for the first 3 variables, you will use the
+special functions `seqnames()`, `ranges()` (or `start()` and `end()`),
+and `strand()`. However, extracting information on the range annotations
+can be done with the `$` operator, as you would do for a data frame. You
+can also use the function `mcols()` to extract only range annotations.
+
+```{r}
+# Extract seqnames (chromosome names)
+head(seqnames(gma_ranges))
+
+# Extract start and end positions
+## Option 1: ranges()
+head(ranges(gma_ranges))
+
+## Option 2: start() and end()
+head(start(gma_ranges))
+head(end(gma_ranges))
+
+# Extract all range annotations
+head(mcols(gma_ranges))
+
+# Extract a specific column
+head(gma_ranges$type)
+```
+
+Finally, you can subset `GRanges` object using the same syntax to subset
+vectors. For example, to extract only ranges for genes, you'd do:
+
+```{r}
+# Extract only gene ranges
+gene_ranges <- gma_ranges[gma_ranges$type == "gene"]
+gene_ranges
+```
+
+::: {.callout-tip}
+
+### Practice
+
+Explore the `GRanges` object created from the GFF3 file to answer the following
+questions:
+
+1. How many ranges represent genes and CDS, respectively?
+2. How many chromosomes are there?
+3. Which chromosome has the greatest number of genes?
+4. What is the mean number of genes per chromosome?
+
+::: {.callout appearance="minimal" collapse="true"}
+
+### Show me the solutions
+
+```{r}
+# Q1
+table(gma_ranges$type)
+
+# Q2
+table(seqnames(gma_ranges))
+
+# Q3
+sort(table(seqnames(gma_ranges)), decreasing = TRUE)
+
+# Q4
+mean(table(seqnames(gma_ranges)))
+```
+
+:::
+:::
+
+Finally, let's load our trait-related SNPs. Since we have SNPs
+associated with resistance to multiple pathogens, the SNP positions are
+stored in a `GRangesList` object, which is simply a list of independent 
+`GRanges` objects.
+
+```{r}
+# Load object with genomic coordinates of trait-related SNPs
+load(here("data", "snps_soyfungi.rda"))
+
+# Inspecting the object
+snps_soyfungi
+names(snps_soyfungi)
+```
+
+Each element of this `GRangesList` contains the genomic coordinates of SNPs
+in the soybean genome that are associated with resistance to a particular
+pathogenic fungus, namely *Cadophora gregata*, *Fusarium graminearum*,
+*Fusarium virguliforme*, *Macrophomina phaseolina*, and
+*Phakopsora pachyrhizi*.
+
+::: {.callout-tip}
+
+### Practice
+
+1. Explore the `GRangesList` object with trait-related SNPs
+and answer the questions below:
+
+- How many resistance-related SNPs are there against each pathogen?
+- How many soybean chromosomes have SNPs associated with resistance 
+to *Cadophora gregata*?
+
+
+::: {.callout-tip appearance="minimal" collapse="true"}
+
+### Show me the solutions
+
+```{r}
+# Q1
+lengths(snps_soyfungi)
+
+# Q2
+length(unique(seqnames(snps_soyfungi$Cgregata)))
+```
+
+:::
+
+:::
+
+
+## Exploratory data analyses
+
+Before proceeding to the candidate gene mining, it is important to explore
+where in the genome our trait-related SNPs are. You can do that with two
+functions from `r BiocStyle::Biocpkg("cageminer")`:
+
+- `plot_snp_distribution()`: create a barplot with the number of SNPs in each
+chromosome.
+- `plot_snp_circos`: create a Circos plot with the position of each SNP
+across chromosomes.
+
+The functions described above work both with `GRanges` and `GRangesList`
+objects. For example:
+
+```{r}
+# Barplot of SNP counts per chromosome
+## A single set of SNPs
+plot_snp_distribution(snps_soyfungi$Cgregata)
+
+## Multiple sets of SNPs
+plot_snp_distribution(snps_soyfungi)
+```
+
+For `plot_snp_circos()`, however, you will also need to input a `GRanges` object
+with chromosome lengths, so that the function knows where each chromosome starts
+and ends. This information is already present in a pre-built object named
+`gma_chrlen`.
+
+```{r}
+# Load object containing chromosome lengths
+load(here("data", "gma_chrlen.rda"))
+
+gma_chrlen
+
+# Keep only ranges for genes in chromosomes (i.e., discard scaffolds)
+chromosome_names <- seqlevels(gene_ranges)[1:20]
+gene_ranges <- keepSeqlevels(gene_ranges, chromosome_names, pruning.mode = "tidy")
+
+# Circos plot with SNP positions across chromosomes
+## A single set of SNPs
+plot_snp_circos(
+    genome_ranges = gma_chrlen, 
+    gene_ranges = gene_ranges, 
+    marker_ranges = snps_soyfungi$Cgregata
+)
+
+## Multiple sets of SNPs
+plot_snp_circos(gma_chrlen, gene_ranges, snps_soyfungi)
+```
+
+## Mining high-confidence candidate genes
+
+To prioritize candidate genes, `r BiocStyle::Biocpkg("cageminer")` uses
+a 3-step workflow as illustrated below:
+
+![Candidate gene prioritization workflow with cageminer](cageminer_workflow.jpeg){fig-align="center"}
+
+Importantly, while it is recommended to follow all 3 steps, they
+can be executed independently, so one can use only one or a few steps.
+For instance, if you don't have GWAS-derived SNPs, but you have a list
+of reference genes that you know are involved in a trait of interest, you
+could execute only steps 2 and 3 to find potential candidate genes. 
+
+Because of such independence between steps, the candidate gene mining workflow 
+can be executed in two ways: 
+with separate functions (`mine_step1()`, `mine_step2()`, and `mine_step3()`), 
+or with a single function (`mine_candidates()`) that automatically executes
+the separate functions one after another. Both ways are described below. 
+First, let's prepare required data:
+
+```{r}
+# Load GCN and data frame of guides
+load(here("data", "gcn_soyfungi.rda"))
+load(here("data", "guides_soyfungi.rda"))
+
+## Conditions in which we expected expression to change
+conditions <- paste0("Fgraminearum_", c("stress_PI567301B", "stress_wyandot"))
+```
+
+::: {.column-page}
+
+::: {.columns}
+::: {.column width="45%"}
+
+**Step-by-step candidate gene mining**
+
+Example: mining genes associated with resistance to *Fusarium graminearum*.
+
+```{r}
+# Step 1: finding genes close to SNPs
+candidates1 <- mine_step1(
+    gene_ranges = gene_ranges, 
+    marker_ranges = snps_soyfungi$Fgraminearum
+)
+
+# Step 2: finding coexpression modules enriched in guide genes
+candidates2 <- mine_step2(
+    exp = se_soyfungi,
+    gcn = gcn_soyfungi,
+    guides = guides_soyfungi$Gene,
+    candidates = candidates1$gene_id
+)
+
+# Step 3: finding genes with altered expression in a condition of interest
+candidates3 <- mine_step3(
+    exp = se_soyfungi,
+    candidates = candidates2$candidates,
+    metadata_cols = "Pathogen_Treatment",
+    sample_group = conditions
+)
+```
+
+:::
+
+::: {.column width='3%'}
+:::
+
+::: {.column width="45%"}
+
+**One-step candidate gene mining**
+
+Example: mining genes associated with resistance to *Fusarium graminearum*.
+
+```{r}
+# Single-step candidate mining with `mine_candidates()`
+candidates <- mine_candidates(
+    gene_ranges = gene_ranges, 
+    marker_ranges = snps_soyfungi$Fgraminearum, 
+    exp = se_soyfungi,
+    gcn = gcn_soyfungi, 
+    guides = guides_soyfungi$Gene,
+    metadata_cols = "Pathogen_Treatment",
+    sample_group = conditions
+)
+```
+
+:::
+:::
+:::
+
+Because `mine_candidates()` is basically a wrapper that runs `mine_step1()`,
+`mine_step2()`, and `mine_step3()` one after another, the results obtained
+with the one-step and the step-by-step mining are the same.
+
+::: {.callout-tip}
+
+### Practice
+
+1. Verify that results obtained with the one-step and with the step-by-step
+mining are the same.
+
+2. Repeat the candidate mining with `mine_candidates()`, but now look for
+high-confidence candidates against *Fusarium virguliforme*. Use the
+following vector as `sample_group`:
+
+```{r}
+#| eval: false
+fvir_conditions <- paste0(
+    "Fvirguliforme_",
+    c(
+        "stress_0dpi", "stress_10-24days", "stress_10dpi", "stress_14dpi",
+        "stress_2dpi", "stress_3-5days", "stress_4dpi", "stress_7dpi"
+    )
+)
+```
+
+How many high-confidence candidate genes are there?
+
+::: {.callout appearance="minimal" collapse="true"}
+
+### Solutions
+
+```{r}
+# Q1
+c1 <- unique(candidates3$gene)
+c2 <- unique(candidates$gene)
+identical(c1, c2)
+
+# Q2
+fvir_conditions <- paste0(
+    "Fvirguliforme_",
+    c(
+        "stress_0dpi", "stress_10-24days", "stress_10dpi", "stress_14dpi",
+        "stress_2dpi", "stress_3-5days", "stress_4dpi", "stress_7dpi"
+    )
+)
+
+candidates_fvir <- mine_candidates(
+    gene_ranges = gene_ranges, 
+    marker_ranges = snps_soyfungi$Fgraminearum, 
+    exp = se_soyfungi,
+    gcn = gcn_soyfungi, 
+    guides = guides_soyfungi$Gene,
+    metadata_cols = "Pathogen_Treatment",
+    sample_group = fvir_conditions
+)
+```
+
+
+:::
+:::
+
+
+## Scoring prioritized candidate genes
+
+Once you've prioritized candidate genes with `mine_candidates()`, you
+might be interested in scoring genes so they can be ranked.
+This can be performed with the function `score_genes()`,
+which uses the following formulae:
+
+$$
+S_i = r_{pb} \kappa
+$$
+where $\kappa = 2$ if the gene either a TF or a hub, $\kappa = 3$ is the gene
+is both a TF and a hub, and $\kappa = 1$ is the gene is neither a TF nor a hub.
+
+Let's demonstrate how this works:
+
+```{r}
+# Load vector of TFs
+load(here("data", "gma_tfs.rda"))
+
+# Get hubs
+hubs <- BioNERO::get_hubs_gcn(exp = se_soyfungi, net = gcn_soyfungi)$Gene
+
+# Score candidates
+scored_genes <- score_genes(
+    mined_candidates = candidates,
+    hubs = hubs,
+    tfs = gma_tfs
+)
+
+head(scored_genes)
+```
+
+
+::: {.callout-tip}
+
+### Practice
+
+Explore the output of `score_genes()` and answer the questions below:
+
+- Which gene has the highest score?
+- Which gene has the lowest score?
+
+
+::: {.callout appearance="minimal" collapse="true"}
+
+### Show me the solutions
+
+```{r}
+# Q1
+scored_genes[which.max(abs(scored_genes$score)), ]
+
+# Q2
+scored_genes[which.min(abs(scored_genes$score)), ]
+```
+
+:::
+:::
+
+## Session information {.unnumbered}
+
+This chapter was created under the following conditions:
+
+```{r}
+#| echo: false
+sessioninfo::session_info()
+```
+
+## References {.unnumbered}
+

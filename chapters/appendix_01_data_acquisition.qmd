@@ -1,0 +1,374 @@
+---
+execute: 
+  warning: false
+  eval: false
+---
+
+# Appendix: Data acquisition {.unnumbered}
+
+Here, I will describe how I obtained each example data set used in this course.
+
+```{r}
+set.seed(123)
+
+# Required packages
+library(BioNERO)
+library(SummarizedExperiment)
+library(tidyverse)
+library(here)
+```
+
+## se_PRJNA800609.rda
+
+This experiment comprises soybean pods infected with *Colletotrichum truncatum*,
+and data were downloaded from 
+[The Soybean Expression Atlas v2](https://soyatlas.venanciogroup.uenf.br/)
+using the "Download by project" tab.
+
+```{r}
+# Load expression matrix
+exp_matrix <- read.csv(
+    "~/Downloads/PRJNA800609_TPM.tsv", header = TRUE, sep = "\t",
+    row.names = 1
+)
+
+# Load sample metadata
+sample_metadata <- read.csv(
+    "~/Downloads/PRJNA800609_metadata.tsv", header = TRUE, sep = "\t"
+) |>
+    inner_join(
+        read.csv(
+            "~/Downloads/SraRunTable.txt", header = TRUE
+        )    
+    ) |>
+    select(BioSample, Part, Cultivar, Name = `Sample.Name`) |>
+    mutate(
+        Treatment = case_when(
+            str_detect(Name, "CK") ~ "control",
+            str_detect(Name, "IN") ~ "infected"
+        ),
+        Timepoint = str_extract(Name, "[0-9]*h")
+    ) |>
+    select(-Name) |>
+    column_to_rownames("BioSample")
+
+
+# Create a SummarizedExperiment object
+se_PRJNA800609 <- SummarizedExperiment(
+    assays = list(TPM = exp_matrix), 
+    colData = sample_metadata[colnames(exp_matrix), ]
+) |>
+    BioNERO::remove_nonexp(method = "median", min_exp = 1)
+
+# Save object to .rda file
+save(
+    se_PRJNA800609, compress = "xz",
+    file = here::here("data", "se_PRJNA800609.rda")
+    
+)
+```
+
+## se_PRJNA574764.rda
+
+This experiment comprises soybean roots infected with *Phytophthora sojae*,
+and data were downloaded from 
+[The Soybean Expression Atlas v2](https://soyatlas.venanciogroup.uenf.br/)
+using the "Download by project" tab.
+
+```{r}
+# Load expression matrix
+exp_matrix <- read.csv(
+    "~/Downloads/PRJNA574764_TPM.tsv", header = TRUE, sep = "\t",
+    row.names = 1
+)
+
+# Load sample metadata
+sample_metadata <- read.csv(
+    "~/Downloads/PRJNA574764_metadata.tsv", header = TRUE, sep = "\t"
+) |>
+    inner_join(
+        read.csv(
+            "~/Downloads/SraRunTable_PRJNA574764.txt", header = TRUE
+        )    
+    ) |>
+    select(BioSample, Part, Cultivar, Age) |>
+    mutate(
+        Treatment = case_when(
+            str_detect(Age, "0 dpi") ~ "control", TRUE ~ "infected"
+        ),
+        Timepoint = str_replace_all(Age, " rep.*", "")
+    ) |>
+    select(-Age) |>
+    column_to_rownames("BioSample")
+
+
+# Create a SummarizedExperiment object
+se_PRJNA574764 <- SummarizedExperiment(
+    assays = list(TPM = exp_matrix), 
+    colData = sample_metadata[colnames(exp_matrix), ]
+) |>
+    BioNERO::remove_nonexp(method = "median", min_exp = 1)
+
+# Save object to .rda file
+save(
+    se_PRJNA574764, compress = "xz",
+    file = here::here("data", "se_PRJNA574764.rda")
+)
+```
+
+
+## gma_annotation.rda
+
+This object is a list of data frames with the following elements:
+
+1. `MapMan`: A 2-column data frame with gene IDs and their associated MapMan
+bins.
+2. `InterPro`: A 2-column data frame with gene IDs and their associated 
+InterPro protein domains.
+
+```{r}
+# Get MapMan annotation
+gma_mapman <- readr::read_tsv(
+    "https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/MapMan/mapman.gma.csv.gz",
+    skip = 8, show_col_types = FALSE
+) |>
+    dplyr::select(Gene = gene_id, MapMan = desc) |>
+    dplyr::distinct() |>
+    as.data.frame()
+
+# Get InterPro annotation
+gma_interpro <- readr::read_tsv(
+    "https://ftp.psb.ugent.be/pub/plaza/plaza_public_dicots_05/InterPro/interpro.gma.csv.gz",
+    skip = 8, show_col_types = FALSE
+) |>
+    dplyr::select(Gene = `#gene_id`, Interpro = description) |>
+    dplyr::distinct() |>
+    as.data.frame()
+
+# Combine annotations in a list and save it
+gma_annotation <- list(MapMan = gma_mapman, InterPro = gma_interpro)
+
+save(
+    gma_annotation, compress = "xz",
+    file = here("data", "gma_annotation.rda")
+)
+```
+
+## gcn_soyfungi.rda,  and se_soyfungi.rda
+
+These files were obtained from @almeida2021integration, and they contain:
+
+- `se_soyfungi`: A `SummarizedExperiment` object containing gene
+expression data on soybean tissues infected with multiple pathogenic
+fungi. Data were obtained the Soybean Expression Atlas [@almeida2023soybean]
+and processed with BioNERO [@almeida2022bionero].
+
+- `gcn_soyfungi`: A gene coexpression network inferred 
+with `BioNERO::exp2gcn()` using `se_soyfungi` as input.
+
+
+These files were created with the code below. First, I identified which
+BioProjects to download from the Soybean Expression Atlas.
+
+```{r}
+# Get a data frame of sample metadata for fungi-infected samples
+burl <- "https://github.com/almeidasilvaf/SoyFungi_GWAS_GCN/raw/main/data/"
+
+fungi_samples <- bind_rows(
+    read_tsv(file.path(burl, "atlas_metadata_stress_samples.tsv")),
+    read_tsv(file.path(burl, "newsamples_metadata_stress_samples.tsv"))
+) |>
+    filter(Stress_info == "fungus")
+
+# List BioProjects to download
+unique(fungi_samples$BioProject)
+```
+
+Next, I downloaded the TPM-normalized expression matrices for each BioProject
+by searching in the *Download by project* tab. Then, I loaded the expression
+matrices to the R session, created a `SummarizedExperiment` object,
+and processed it.
+
+```{r}
+# Load expression data
+exp_files <- list.files("~/Downloads", pattern = "PRJ", full.names = TRUE)
+exp_list <- lapply(exp_files, function(x) {
+    return(read.csv(x, header = TRUE, sep = "\t"))
+})
+exp <- Reduce(function(x, y) merge(x, y, by = "Gene"), exp_list) |>
+    tibble::column_to_rownames("Gene")
+
+# Keep only samples present in both `exp` and `fungi_samples$BioSample`
+shared <- intersect(names(exp), unique(fungi_samples$BioSample))
+exp <- exp[, shared]
+
+# Create a data frame of sample metadata
+coldata <- fungi_samples |>
+    filter(BioSample %in% shared) |>
+    column_to_rownames("BioSample") |>
+    select(Pathogen, Treatment = Sample_description, Tissue)
+
+coldata <- coldata[names(exp), ] # reorder rows based on colnames of `exp`
+
+# Create `SummarizedExperiment` object
+se_soyfungi <- SummarizedExperiment(
+    assays = list(exp_TPM = exp),
+    colData = coldata
+)
+
+# Process the `SummarizedExperiment` object
+se_soyfungi <- BioNERO::exp_preprocess(
+    se_soyfungi, 
+    min_exp = 5, 
+    Zk_filtering = FALSE
+)
+
+# Add another metadata variable that combines `Pathogen` and `Treatment`
+se_soyfungi$Pathogen_Treatment <- paste0(
+    se_soyfungi$Pathogen, "_", se_soyfungi$Treatment
+)
+
+# Save object
+save(
+    se_soyfungi, compress = "xz",
+    file = here("data", "se_soyfungi.rda")
+)
+```
+
+Finally, I used the process expression data to infer a GCN.
+
+```{r}
+# Infer GCN
+sft <- SFT_fit(
+    se_soyfungi, 
+    net_type = "unsigned", 
+    cor_method = "pearson"
+)
+
+gcn_soyfungi <- exp2gcn(
+    se_soyfungi, 
+    net_type = "unsigned", 
+    cor_method = "pearson",
+    SFTpower = sft$power
+)
+
+# Save network
+gcn_soyfungi$adjacency_matrix <- NULL # to reduce file size
+gcn_soyfungi$correlation_matrix <- NULL # to reduce file size
+
+save(
+    gcn_soyfungi, compress = "xz",
+    file = here("data", "gcn_soyfungi.rda")
+)
+
+```
+
+## snps_soyfungi.rda
+
+This object contains a `GRangesList` with genomic coordinates of 
+soybean SNPs associated with resistance to phytopathogenic fungi, 
+and they were obtained from @almeida2021integration with the following code:
+
+```{r}
+# Download file
+furl <- "https://github.com/almeidasilvaf/SoyFungi_GWAS_GCN/raw/main/products/result_files/snp_granges.rda"
+outfile <- tempfile(fileext = ".rda")
+
+download.file(
+    furl, destfile = outfile
+)
+
+# Load file
+load(outfile)
+snps_soyfungi <- snp_grangeslist
+
+# Save object
+save(
+    snps_soyfungi, compress = "xz",
+    file = here("data", "snps_soyfungi.rda")
+)
+```
+
+## guides_soyfungi.rda
+
+This object contains a data frame of resistance-related guide genes,
+and it was obtained from @almeida2021integration with the following code:
+
+```{r}
+# Get data of guide genes
+guides_soyfungi <- read_tsv(
+    "https://github.com/almeidasilvaf/SoyFungi_GWAS_GCN/raw/main/products/tables/sup_table3.tsv",
+    show_col_types = FALSE
+)
+
+# Save object
+save(
+    guides_soyfungi, compress = "xz",
+    file = here("data", "guides_soyfungi.rda")
+)
+```
+
+
+## gma_primary_transcripts.gff.gz
+
+This file contains genomic ranges for primary transcripts.
+
+```{r}
+# Download GFF file
+download.file(
+    "https://github.com/almeidasilvaf/SoyFungi_GWAS_GCN/raw/main/data/PLAZA_selected.transcripts.gff.gz",
+    destfile = here("data", "gma_primary_transcripts.gff3.gz")
+)
+```
+
+## gma_chrlen.rda
+
+This file contains a `GRanges` object with chromosome lengths for the soybean
+genome, and it was created with the code below.
+
+```{r}
+# Download file temporarily
+url <- "https://github.com/almeidasilvaf/SoyFungi_GWAS_GCN/raw/main/data/chr_size_soybean.rda"
+out <- tempfile(fileext = ".rda")
+download.file(url, destfile = out)
+
+
+# Load object and create GRanges
+load(out)
+
+gma_chrlen <- data.frame(
+    seqnames = rownames(chr_size),
+    start = 1, 
+    end = chr_size[, 1]
+)
+gma_chrlen <- GenomicRanges::makeGRangesFromDataFrame(gma_chrlen)
+
+# Save object
+save(
+    gma_chrlen, compress = "xz",
+    file = here("data", "gma_chrlen.rda")
+)
+```
+
+## gma_tfs.rda
+
+This object is a character vector of gene IDs for soybean TFs,
+and it was obtained with the following code:
+
+```{r}
+# Get a vector of TF gene IDs
+gma_tfs <- readr::read_tsv(
+    "http://planttfdb.gao-lab.org/download/TF_list/Gma_TF_list.txt.gz"
+) |>
+    dplyr::pull(Gene_ID) |>
+    unique()
+
+# Save object
+save(
+    gma_tfs, compress = "xz",
+    file = here("data", "gma_tfs.rda")
+)
+```
+
+## References {.unnumbered}
+
