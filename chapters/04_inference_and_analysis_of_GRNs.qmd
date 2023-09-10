@@ -165,7 +165,7 @@ head(filtered_grn)
 
 ### Practice
 
-1. Filter the GRN obtained with GENIE3 to keep only edges with weight $\ge$0.2.
+1. Filter the GRN obtained with GENIE3 to keep only edges with weight $\ge$ 0.2.
 Then, answer the questions below:
 
 - What is the top TF in number of targets?

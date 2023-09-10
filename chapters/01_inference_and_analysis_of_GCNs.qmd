@@ -235,7 +235,9 @@ p_heatmap <- plot_heatmap(
 p_heatmap
 ```
 
-Now, let's plot a principal component analysis of samples.
+Now, let's plot a principal component analysis of samples. Note that we have
+TPM-normalized data, which is not the best kind of data we should use for PCA,
+but we're still doing it just to demonstrate how the function `plot_PCA()` works.
 
 ```{r}
 # Plot PCA
