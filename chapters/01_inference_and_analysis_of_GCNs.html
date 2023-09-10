@@ -501,23 +501,23 @@ Show me the solutions
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-1" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="1" data-code-annotation="1">Take <code>exp</code>, and then</span>
+<span data-code-annotation="1" data-code-cell="annotated-cell-1" data-code-lines="1">Take <code>exp</code>, and then</span>
 </dd>
 <dt data-target-cell="annotated-cell-1" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="2" data-code-annotation="2">replace missing values (<code>NA</code>) with 0, and then</span>
+<span data-code-annotation="2" data-code-cell="annotated-cell-1" data-code-lines="2">replace missing values (<code>NA</code>) with 0, and then</span>
 </dd>
 <dt data-target-cell="annotated-cell-1" data-target-annotation="3">3</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="3" data-code-annotation="3">remove genes with median expression &lt;5, and then</span>
+<span data-code-annotation="3" data-code-cell="annotated-cell-1" data-code-lines="3">remove genes with median expression &lt;5, and then</span>
 </dd>
 <dt data-target-cell="annotated-cell-1" data-target-annotation="4">4</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="4" data-code-annotation="4">keep only the top 20% of the genes with highest variances, and then</span>
+<span data-code-annotation="4" data-code-cell="annotated-cell-1" data-code-lines="4">keep only the top 20% of the genes with highest variances, and then</span>
 </dd>
 <dt data-target-cell="annotated-cell-1" data-target-annotation="5">5</dt>
 <dd>
-<span data-code-cell="annotated-cell-1" data-code-lines="5" data-code-annotation="5">correct for confounders and apply quantile normalization.</span>
+<span data-code-annotation="5" data-code-cell="annotated-cell-1" data-code-lines="5">correct for confounders and apply quantile normalization.</span>
 </dd>
 </dl>
 </div>
@@ -616,7 +616,7 @@ Show me the solutions
 <p><img src="01_inference_and_analysis_of_GCNs_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>Now, let’s plot a principal component analysis of samples.</p>
+<p>Now, let’s plot a principal component analysis of samples. Note that we have TPM-normalized data, which is not the best kind of data we should use for PCA, but we’re still doing it just to demonstrate how the function <code>plot_PCA()</code> works.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot PCA</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>p_pca <span class="ot">&lt;-</span> <span class="fu">plot_PCA</span>(</span>
@@ -700,11 +700,11 @@ Show me the solutions
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-7" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-7" data-code-lines="4" data-code-annotation="1">Infer a <em>signed hybrid</em> network (negative correlations are represented as 0).</span>
+<span data-code-annotation="1" data-code-cell="annotated-cell-7" data-code-lines="4">Infer a <em>signed hybrid</em> network (negative correlations are represented as 0).</span>
 </dd>
 <dt data-target-cell="annotated-cell-7" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-7" data-code-lines="5" data-code-annotation="2">Use Pearson’s correlation coefficient.</span>
+<span data-code-annotation="2" data-code-cell="annotated-cell-7" data-code-lines="5">Use Pearson’s correlation coefficient.</span>
 </dd>
 </dl>
 </div>
@@ -1006,11 +1006,11 @@ Show me the solutions
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-18" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-18" data-code-lines="3" data-code-annotation="1">Using only genes in the network as background set (very important!)</span>
+<span data-code-annotation="1" data-code-cell="annotated-cell-18" data-code-lines="3">Using only genes in the network as background set (very important!)</span>
 </dd>
 <dt data-target-cell="annotated-cell-18" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-18" data-code-lines="4" data-code-annotation="2">Perform enrichment for MapMan pathways</span>
+<span data-code-annotation="2" data-code-cell="annotated-cell-18" data-code-lines="4">Perform enrichment for MapMan pathways</span>
 </dd>
 </dl>
 </div>
@@ -1137,11 +1137,11 @@ Show me the solutions
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-21" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-21" data-code-lines="3" data-code-annotation="1">Create a subgraph containing all genes in the <em>royalblue</em> module.</span>
+<span data-code-annotation="1" data-code-cell="annotated-cell-21" data-code-lines="3">Create a subgraph containing all genes in the <em>royalblue</em> module.</span>
 </dd>
 <dt data-target-cell="annotated-cell-21" data-target-annotation="2">2</dt>
 <dd>
-<span data-code-cell="annotated-cell-21" data-code-lines="4" data-code-annotation="2">Filter the graph to keep only connections greater than or equal to a given correlation coefficient (automatically estimated based on optimal scale-free topology fit).</span>
+<span data-code-annotation="2" data-code-cell="annotated-cell-21" data-code-lines="4">Filter the graph to keep only connections greater than or equal to a given correlation coefficient (automatically estimated based on optimal scale-free topology fit).</span>
 </dd>
 </dl>
 </div>
@@ -1167,7 +1167,7 @@ Show me the solutions
 <dl class="code-annotation-container-grid">
 <dt data-target-cell="annotated-cell-22" data-target-annotation="1">1</dt>
 <dd>
-<span data-code-cell="annotated-cell-22" data-code-lines="4" data-code-annotation="1">Nodes will be colored by their module (hence, in this case, they will have a single color).</span>
+<span data-code-annotation="1" data-code-cell="annotated-cell-22" data-code-lines="4">Nodes will be colored by their module (hence, in this case, they will have a single color).</span>
 </dd>
 </dl>
 </div>
@@ -1252,7 +1252,7 @@ Show me the solutions
  collate  en_US.UTF-8
  ctype    en_US.UTF-8
  tz       Europe/Brussels
- date     2023-09-09
+ date     2023-09-10
  pandoc   3.1.1 @ /usr/lib/rstudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
